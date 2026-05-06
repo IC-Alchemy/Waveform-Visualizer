@@ -184,9 +184,39 @@ Lower values make the trace dimmer and softer. Higher values make it brighter an
 
 #### Focus
 
-`Focus` controls point size in pixels.
+`Focus` controls beam size in pixels.
 
-Lower values create a sharper trace. Higher values create a thicker, softer trace with more glow.
+Lower values create a thinner trace. Higher values create a thicker trace with more phosphor energy.
+
+#### Trace Antialias
+
+`Trace antialias` controls the edge softness of the trace independently from Focus.
+
+Lower values make the beam edge harder. Higher values smooth the edge and widen the local halo without changing the point size as much as Focus does.
+
+#### Trace Style
+
+`Trace style` chooses how samples are drawn.
+
+`Hybrid` draws a connected line plus phosphor points. It is the default and keeps low sample counts from looking dotted.
+
+`Points` uses only point sprites. This is closest to the original renderer.
+
+`Connected` uses only the connected line path. It can look cleaner at low sample counts but is thinner because WebGL line width is browser-limited.
+
+#### Phosphor Color
+
+`Phosphor color` changes the trace and grid tint. Use green for a classic CRT look, amber for warmer monitor-like trails, or blue-white for a sharper electronic display style.
+
+#### Red, Green, and Blue Decay
+
+`Red decay`, `Green decay`, and `Blue decay` control how long each color channel remains in the persistence buffer.
+
+Lower values fade that color channel faster. Different channel values make trails shift color as they age, which can better approximate phosphor behavior than one global fade.
+
+#### Bloom
+
+`Bloom` controls the separate blurred glow pass. Raise it for a wider luminous aura, or lower it when the trace needs to stay crisp.
 
 #### Trace Window
 
@@ -220,6 +250,12 @@ The Renderer section shows live performance.
 
 `GPU samples` shows the current samples-per-frame setting.
 
+`Export scale` controls the temporary resolution multiplier used only when saving a PNG. The app caps export dimensions to the current browser/GPU texture limit.
+
+`Export samples` controls the temporary sample count used only for saved PNGs. It does not change live performance.
+
+`Save PNG` renders the current oscillator state into an offscreen export target, applies the bloom and phosphor presentation pass, and downloads the result as a PNG. The export image contains the oscilloscope render, not the overlaid label or text readouts.
+
 ## Practical Examples
 
 ### Make a Circle or Ellipse
@@ -248,7 +284,7 @@ The Renderer section shows live performance.
 
 1. Click `Square XY`.
 2. Increase Trace Intensity if the trace is too dim.
-3. Lower Focus for sharper edges or raise Focus for softer phosphor glow.
+3. Lower Focus for thinner edges, raise Bloom for more glow, or raise Trace antialias for smoother edges.
 
 ## Troubleshooting
 
@@ -258,15 +294,15 @@ Use a modern browser with WebGL2 enabled. Current desktop versions of Chrome, Ed
 
 ### The Trace Is Too Dim
 
-Increase `Trace intensity`, increase `Persistence`, or raise `Focus`.
+Increase `Trace intensity`, increase `Persistence`, raise `Focus`, or raise `Bloom`.
 
 ### The Trace Is Too Bright or Blown Out
 
-Lower `Trace intensity` or `Persistence`.
+Lower `Trace intensity`, `Persistence`, or `Bloom`.
 
 ### The App Feels Slow
 
-Lower `Samples/frame`, lower `Focus`, or reduce the browser window size. High-DPI screens can require more GPU work because the canvas renders at device pixel ratio, capped at 2.
+Lower `Samples/frame`, lower `Focus`, reduce `Bloom`, switch Trace style to `Points`, or reduce the browser window size. High-DPI screens can require more GPU work because the canvas renders at device pixel ratio, capped at 2.
 
 ### Note Controls Are Disabled
 
@@ -285,8 +321,6 @@ This is expected. Directly editing a frequency switches the app back to `Hz` mod
 - Add MIDI input for controlling frequency, note, amplitude, phase, or presets.
 - Add tooltips or inline help for controls such as Trace Window, Focus, and Temperament.
 - Add keyboard shortcuts for freeze/resume, preset switching, and fine parameter changes.
-- Add a screenshot/export button for saving the current scope image.
 - Add a reset button for display-only settings.
 - Add mobile-specific control refinements for faster editing on touch screens.
-- Add color themes or configurable phosphor colors.
 - Add accessibility improvements, including clearer focus states and richer screen-reader descriptions.

@@ -173,6 +173,7 @@
     }
 
     input[type="number"],
+    input[type="color"],
     select,
     button {
       width: 100%;
@@ -186,6 +187,11 @@
     input[type="number"] {
       padding: 0 9px;
       font-variant-numeric: tabular-nums;
+    }
+
+    input[type="color"] {
+      padding: 4px 6px;
+      cursor: pointer;
     }
 
     button {
@@ -272,6 +278,14 @@
       margin-top: 2px;
       color: #f0fff6;
       font-size: 17px;
+    }
+
+    .statusLine {
+      min-height: 18px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
     }
 
     @media (max-width: 860px) {
@@ -415,6 +429,38 @@
         <input id="focus" type="range" min="1.2" max="5" step="0.1" value="2.4">
       </label>
       <label>
+        <span class="row"><span>Trace antialias</span><output data-out="traceAntialias"></output></span>
+        <input id="traceAntialias" type="range" min="0" max="1" step="0.01" value="0.54">
+      </label>
+      <div class="compactGrid">
+        <label>Trace style
+          <select id="traceStyle">
+            <option value="hybrid">Hybrid</option>
+            <option value="points">Points</option>
+            <option value="lines">Connected</option>
+          </select>
+        </label>
+        <label>Phosphor color
+          <input id="phosphorColor" type="color" value="#5cff9f" aria-label="Phosphor color">
+        </label>
+      </div>
+      <label>
+        <span class="row"><span>Red decay</span><output data-out="decayR"></output></span>
+        <input id="decayR" type="range" min="0.82" max="1" step="0.001" value="0.920">
+      </label>
+      <label>
+        <span class="row"><span>Green decay</span><output data-out="decayG"></output></span>
+        <input id="decayG" type="range" min="0.82" max="1" step="0.001" value="1.000">
+      </label>
+      <label>
+        <span class="row"><span>Blue decay</span><output data-out="decayB"></output></span>
+        <input id="decayB" type="range" min="0.82" max="1" step="0.001" value="0.960">
+      </label>
+      <label>
+        <span class="row"><span>Bloom</span><output data-out="bloom"></output></span>
+        <input id="bloom" type="range" min="0" max="2.2" step="0.01" value="0.82">
+      </label>
+      <label>
         <span class="row"><span>Trace window</span><output data-out="window"></output></span>
         <input id="window" type="range" min="0.002" max="0.08" step="0.001" value="0.032">
       </label>
@@ -436,6 +482,16 @@
         <div class="stat">Frame rate<strong id="fps">0</strong></div>
         <div class="stat">GPU samples<strong id="sampleStat">0</strong></div>
       </div>
+      <label>
+        <span class="row"><span>Export scale</span><output data-out="exportScale"></output></span>
+        <input id="exportScale" type="range" min="1" max="3" step="0.5" value="2">
+      </label>
+      <label>
+        <span class="row"><span>Export samples</span><output data-out="exportSamples"></output></span>
+        <input id="exportSamples" type="range" min="16384" max="65536" step="4096" value="32768">
+      </label>
+      <button id="savePng" type="button">Save PNG</button>
+      <div class="statusLine" id="exportStatus" aria-live="polite"></div>
     </section>
   </aside>
 
@@ -468,8 +524,15 @@
         persistence: 0.972,
         intensity: 0.32,
         focus: 2.4,
+        traceAntialias: 0.54,
+        traceStyle: "hybrid",
+        phosphorColor: [0.36, 1.0, 0.62],
+        decay: { r: 0.92, g: 1.0, b: 0.96 },
+        bloom: 0.82,
         window: 0.032,
         samples: 8192,
+        exportScale: 2,
+        exportSamples: 32768,
         frozen: false
       };
 
@@ -519,12 +582,12 @@
       const fragFade = `#version 300 es
         precision highp float;
         uniform sampler2D uPrev;
-        uniform float uPersistence;
+        uniform vec3 uDecay;
         in vec2 vUv;
         out vec4 outColor;
         void main() {
           vec3 old = clamp(texture(uPrev, vUv).rgb, vec3(0.0), vec3(4.0));
-          outColor = vec4(old * uPersistence, 1.0);
+          outColor = vec4(old * uDecay, 1.0);
         }`;
 
       const vertTrace = `#version 300 es
@@ -570,22 +633,44 @@
       const fragTrace = `#version 300 es
         precision highp float;
         uniform float uIntensity;
+        uniform float uAntialias;
+        uniform vec3 uPhosphorColor;
         in float vAge;
         out vec4 outColor;
         void main() {
           vec2 p = gl_PointCoord * 2.0 - 1.0;
           float d = dot(p, p);
-          float core = exp(-d * 5.8);
-          float halo = exp(-d * 1.45) * 0.32;
+          float aa = clamp(uAntialias, 0.0, 1.0);
+          float edge = 1.0 - smoothstep(1.0 - aa * 0.28, 1.0, d);
+          float core = exp(-d * mix(9.0, 4.2, aa));
+          float halo = exp(-d * mix(2.4, 1.05, aa)) * mix(0.18, 0.42, aa);
           float head = mix(0.62, 1.1, vAge);
-          vec3 phosphor = vec3(0.16, 1.0, 0.48) * (core + halo) * uIntensity * head;
-          outColor = vec4(phosphor, core + halo);
+          vec3 phosphor = uPhosphorColor * (core + halo) * edge * uIntensity * head;
+          outColor = vec4(phosphor, (core + halo) * edge);
+        }`;
+
+      const fragTraceLine = `#version 300 es
+        precision highp float;
+        uniform float uIntensity;
+        uniform float uAntialias;
+        uniform vec3 uPhosphorColor;
+        in float vAge;
+        out vec4 outColor;
+        void main() {
+          float aa = clamp(uAntialias, 0.0, 1.0);
+          float head = mix(0.46, 0.95, vAge);
+          float body = mix(0.18, 0.42, aa);
+          vec3 phosphor = uPhosphorColor * uIntensity * head * body;
+          outColor = vec4(phosphor, body);
         }`;
 
       const fragPresent = `#version 300 es
         precision highp float;
         uniform sampler2D uTex;
+        uniform sampler2D uBloom;
         uniform vec2 uResolution;
+        uniform vec3 uPhosphorColor;
+        uniform float uBloomStrength;
         in vec2 vUv;
         out vec4 outColor;
 
@@ -595,15 +680,8 @@
         }
 
         void main() {
-          vec2 px = 1.0 / uResolution;
           vec3 base = texture(uTex, vUv).rgb;
-          vec3 glow = base;
-          glow += texture(uTex, vUv + vec2(px.x * 1.5, 0.0)).rgb * 0.5;
-          glow += texture(uTex, vUv - vec2(px.x * 1.5, 0.0)).rgb * 0.5;
-          glow += texture(uTex, vUv + vec2(0.0, px.y * 1.5)).rgb * 0.5;
-          glow += texture(uTex, vUv - vec2(0.0, px.y * 1.5)).rgb * 0.5;
-          glow += texture(uTex, vUv + vec2(px.x * 4.0, px.y * 4.0)).rgb * 0.22;
-          glow += texture(uTex, vUv - vec2(px.x * 4.0, px.y * 4.0)).rgb * 0.22;
+          vec3 bloom = texture(uBloom, vUv).rgb;
 
           vec2 scope = vUv * 2.0 - 1.0;
           float roundMask = 1.0 - smoothstep(0.92, 1.24, length(scope * vec2(1.0, 0.92)));
@@ -614,12 +692,41 @@
           float scan = 0.94 + 0.06 * sin(gl_FragCoord.y * 2.35);
 
           vec3 bg = vec3(0.006, 0.014, 0.012);
-          vec3 grid = vec3(0.03, 0.26, 0.15) * gridMinor + vec3(0.05, 0.5, 0.26) * gridMajor + vec3(0.12, 0.72, 0.32) * center * 0.42;
-          vec3 phosphor = vec3(0.5, 1.0, 0.64) * base * 1.55 + vec3(0.18, 0.95, 0.42) * glow * 0.45;
+          vec3 gridTint = mix(vec3(0.04, 0.36, 0.19), uPhosphorColor, 0.42);
+          vec3 grid = gridTint * gridMinor * 0.55 + gridTint * gridMajor * 1.05 + uPhosphorColor * center * 0.42;
+          vec3 phosphor = base * 1.48 + bloom * uBloomStrength;
           vec3 color = bg + grid * roundMask * 0.45 + phosphor * roundMask;
           color *= vignette * scan;
           color += vec3(0.01, 0.035, 0.025) * (1.0 - roundMask);
           outColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+        }`;
+
+      const fragBloom = `#version 300 es
+        precision highp float;
+        uniform sampler2D uSource;
+        uniform vec2 uResolution;
+        uniform vec2 uDirection;
+        uniform int uExtract;
+        in vec2 vUv;
+        out vec4 outColor;
+
+        vec3 sourceColor(vec2 uv) {
+          vec3 c = texture(uSource, uv).rgb;
+          if (uExtract == 1) {
+            float bright = max(max(c.r, c.g), c.b);
+            c = max(c - vec3(0.035), vec3(0.0)) * smoothstep(0.025, 0.22, bright);
+          }
+          return c;
+        }
+
+        void main() {
+          vec2 stepUv = uDirection / uResolution;
+          vec3 color = sourceColor(vUv) * 0.227027;
+          color += sourceColor(vUv + stepUv * 1.384615) * 0.316216;
+          color += sourceColor(vUv - stepUv * 1.384615) * 0.316216;
+          color += sourceColor(vUv + stepUv * 3.230769) * 0.070270;
+          color += sourceColor(vUv - stepUv * 3.230769) * 0.070270;
+          outColor = vec4(color, 1.0);
         }`;
 
       function compile(type, source) {
@@ -645,6 +752,8 @@
 
       const fadeProgram = program(vertFull, fragFade);
       const traceProgram = program(vertTrace, fragTrace);
+      const lineTraceProgram = program(vertTrace, fragTraceLine);
+      const bloomProgram = program(vertFull, fragBloom);
       const presentProgram = program(vertFull, fragPresent);
       const vao = gl.createVertexArray();
       gl.bindVertexArray(vao);
@@ -652,7 +761,7 @@
       const loc = {
         fade: {
           prev: gl.getUniformLocation(fadeProgram, "uPrev"),
-          persistence: gl.getUniformLocation(fadeProgram, "uPersistence")
+          decay: gl.getUniformLocation(fadeProgram, "uDecay")
         },
         trace: {
           time: gl.getUniformLocation(traceProgram, "uTime"),
@@ -663,11 +772,35 @@
           oscY: gl.getUniformLocation(traceProgram, "uOscY"),
           waveX: gl.getUniformLocation(traceProgram, "uWaveX"),
           waveY: gl.getUniformLocation(traceProgram, "uWaveY"),
-          intensity: gl.getUniformLocation(traceProgram, "uIntensity")
+          intensity: gl.getUniformLocation(traceProgram, "uIntensity"),
+          antialias: gl.getUniformLocation(traceProgram, "uAntialias"),
+          phosphorColor: gl.getUniformLocation(traceProgram, "uPhosphorColor")
+        },
+        line: {
+          time: gl.getUniformLocation(lineTraceProgram, "uTime"),
+          traceWindow: gl.getUniformLocation(lineTraceProgram, "uTraceWindow"),
+          sampleCount: gl.getUniformLocation(lineTraceProgram, "uSampleCount"),
+          pointSize: gl.getUniformLocation(lineTraceProgram, "uPointSize"),
+          oscX: gl.getUniformLocation(lineTraceProgram, "uOscX"),
+          oscY: gl.getUniformLocation(lineTraceProgram, "uOscY"),
+          waveX: gl.getUniformLocation(lineTraceProgram, "uWaveX"),
+          waveY: gl.getUniformLocation(lineTraceProgram, "uWaveY"),
+          intensity: gl.getUniformLocation(lineTraceProgram, "uIntensity"),
+          antialias: gl.getUniformLocation(lineTraceProgram, "uAntialias"),
+          phosphorColor: gl.getUniformLocation(lineTraceProgram, "uPhosphorColor")
+        },
+        bloom: {
+          source: gl.getUniformLocation(bloomProgram, "uSource"),
+          resolution: gl.getUniformLocation(bloomProgram, "uResolution"),
+          direction: gl.getUniformLocation(bloomProgram, "uDirection"),
+          extract: gl.getUniformLocation(bloomProgram, "uExtract")
         },
         present: {
           tex: gl.getUniformLocation(presentProgram, "uTex"),
-          resolution: gl.getUniformLocation(presentProgram, "uResolution")
+          bloom: gl.getUniformLocation(presentProgram, "uBloom"),
+          resolution: gl.getUniformLocation(presentProgram, "uResolution"),
+          phosphorColor: gl.getUniformLocation(presentProgram, "uPhosphorColor"),
+          bloomStrength: gl.getUniformLocation(presentProgram, "uBloomStrength")
         }
       };
 
@@ -675,9 +808,17 @@
         { tex: gl.createTexture(), fb: gl.createFramebuffer() },
         { tex: gl.createTexture(), fb: gl.createFramebuffer() }
       ];
+      const bloomBuffers = [
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() },
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() }
+      ];
+      const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) || 4096;
+      const exportMaxDimension = Math.min(4096, maxTextureSize);
       let readIndex = 0;
       let width = 0;
       let height = 0;
+      let bloomWidth = 0;
+      let bloomHeight = 0;
       let simTime = 0;
       let lastNow = performance.now();
       let fpsLast = lastNow;
@@ -686,15 +827,23 @@
       gl.disable(gl.DEPTH_TEST);
       gl.disable(gl.CULL_FACE);
 
-      function configureTexture(target) {
+      function configureTexture(target, targetWidth, targetHeight) {
         gl.bindTexture(gl.TEXTURE_2D, target.tex);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, targetWidth, targetHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.tex, 0);
+      }
+
+      function clearTargets(targets) {
+        for (const target of targets) {
+          gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
+          gl.clearColor(0, 0, 0, 1);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+        }
       }
 
       function resize() {
@@ -706,15 +855,16 @@
         }
         width = nextWidth;
         height = nextHeight;
+        bloomWidth = Math.max(1, Math.floor(width * 0.5));
+        bloomHeight = Math.max(1, Math.floor(height * 0.5));
         canvas.width = width;
         canvas.height = height;
-        configureTexture(buffers[0]);
-        configureTexture(buffers[1]);
-        for (const target of buffers) {
-          gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
-          gl.clearColor(0, 0, 0, 1);
-          gl.clear(gl.COLOR_BUFFER_BIT);
-        }
+        configureTexture(buffers[0], width, height);
+        configureTexture(buffers[1], width, height);
+        configureTexture(bloomBuffers[0], bloomWidth, bloomHeight);
+        configureTexture(bloomBuffers[1], bloomWidth, bloomHeight);
+        clearTargets(buffers);
+        clearTargets(bloomBuffers);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, width, height);
       }
@@ -869,6 +1019,23 @@
         update();
       }
 
+      function hexToRgb(hex) {
+        const raw = hex.replace("#", "");
+        const value = Number.parseInt(raw.length === 3 ? raw.replace(/./g, c => c + c) : raw, 16);
+        if (!Number.isFinite(value)) {
+          return state.phosphorColor;
+        }
+        return [
+          ((value >> 16) & 255) / 255,
+          ((value >> 8) & 255) / 255,
+          (value & 255) / 255
+        ];
+      }
+
+      function rgbToHex(rgb) {
+        return `#${rgb.map(value => Math.round(Math.min(1, Math.max(0, value)) * 255).toString(16).padStart(2, "0")).join("")}`;
+      }
+
       function wireOsc(section, osc) {
         const model = state[osc];
         const wave = section.querySelector("[data-param='wave']");
@@ -935,8 +1102,25 @@
         bindNumberControl(document.getElementById("persistence"), document.querySelector("[data-out='persistence']"), () => state.persistence, v => { state.persistence = v; }, v => v.toFixed(3));
         bindNumberControl(document.getElementById("intensity"), document.querySelector("[data-out='intensity']"), () => state.intensity, v => { state.intensity = v; }, v => v.toFixed(3));
         bindNumberControl(document.getElementById("focus"), document.querySelector("[data-out='focus']"), () => state.focus, v => { state.focus = v; }, v => `${v.toFixed(1)} px`);
+        bindNumberControl(document.getElementById("traceAntialias"), document.querySelector("[data-out='traceAntialias']"), () => state.traceAntialias, v => { state.traceAntialias = v; }, v => v.toFixed(2));
+        bindNumberControl(document.getElementById("decayR"), document.querySelector("[data-out='decayR']"), () => state.decay.r, v => { state.decay.r = v; }, v => v.toFixed(3));
+        bindNumberControl(document.getElementById("decayG"), document.querySelector("[data-out='decayG']"), () => state.decay.g, v => { state.decay.g = v; }, v => v.toFixed(3));
+        bindNumberControl(document.getElementById("decayB"), document.querySelector("[data-out='decayB']"), () => state.decay.b, v => { state.decay.b = v; }, v => v.toFixed(3));
+        bindNumberControl(document.getElementById("bloom"), document.querySelector("[data-out='bloom']"), () => state.bloom, v => { state.bloom = v; }, v => v.toFixed(2));
         bindNumberControl(document.getElementById("window"), document.querySelector("[data-out='window']"), () => state.window, v => { state.window = v; }, v => `${(v * 1000).toFixed(1)} ms`);
         bindNumberControl(document.getElementById("samples"), document.querySelector("[data-out='samples']"), () => state.samples, v => { state.samples = v | 0; }, v => String(v | 0));
+        bindNumberControl(document.getElementById("exportScale"), document.querySelector("[data-out='exportScale']"), () => state.exportScale, v => { state.exportScale = v; }, v => `${v.toFixed(1)}x`);
+        bindNumberControl(document.getElementById("exportSamples"), document.querySelector("[data-out='exportSamples']"), () => state.exportSamples, v => { state.exportSamples = v | 0; }, v => String(v | 0));
+        const traceStyle = document.getElementById("traceStyle");
+        traceStyle.value = state.traceStyle;
+        traceStyle.addEventListener("input", () => {
+          state.traceStyle = traceStyle.value;
+        });
+        const phosphorColor = document.getElementById("phosphorColor");
+        phosphorColor.value = rgbToHex(state.phosphorColor);
+        phosphorColor.addEventListener("input", () => {
+          state.phosphorColor = hexToRgb(phosphorColor.value);
+        });
       }
 
       function wireTuning() {
@@ -1039,6 +1223,184 @@
       const sampleText = document.getElementById("sampleStat");
       const traceReadout = document.getElementById("traceReadout");
       const perfReadout = document.getElementById("perfReadout");
+      const savePng = document.getElementById("savePng");
+      const exportStatus = document.getElementById("exportStatus");
+
+      function setTraceUniforms(programLoc, sampleCount, pointSize, time, intensityScale = 1) {
+        gl.uniform1f(programLoc.time, time);
+        gl.uniform1f(programLoc.traceWindow, state.window);
+        gl.uniform1f(programLoc.sampleCount, sampleCount);
+        gl.uniform1f(programLoc.pointSize, pointSize);
+        gl.uniform4f(programLoc.oscX, state.x.freq, state.x.amp, state.x.phase, state.x.offset);
+        gl.uniform4f(programLoc.oscY, state.y.freq, state.y.amp, state.y.phase, state.y.offset);
+        gl.uniform1i(programLoc.waveX, state.x.wave);
+        gl.uniform1i(programLoc.waveY, state.y.wave);
+        gl.uniform1f(programLoc.intensity, state.intensity * intensityScale);
+        gl.uniform1f(programLoc.antialias, state.traceAntialias);
+        gl.uniform3f(programLoc.phosphorColor, state.phosphorColor[0], state.phosphorColor[1], state.phosphorColor[2]);
+      }
+
+      function drawAccumulatedFrame(readTex, writeFb, targetWidth, targetHeight, sampleCount, pointScale, time, persistence) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, writeFb);
+        gl.viewport(0, 0, targetWidth, targetHeight);
+        gl.disable(gl.BLEND);
+        gl.useProgram(fadeProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, readTex);
+        gl.uniform1i(loc.fade.prev, 0);
+        const hold = persistence >= 1.0;
+        gl.uniform3f(
+          loc.fade.decay,
+          hold ? 1.0 : persistence * state.decay.r,
+          hold ? 1.0 : persistence * state.decay.g,
+          hold ? 1.0 : persistence * state.decay.b
+        );
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+        if (state.traceStyle !== "points") {
+          gl.useProgram(lineTraceProgram);
+          setTraceUniforms(loc.line, sampleCount, pointScale, time, 0.62);
+          gl.drawArrays(gl.LINE_STRIP, 0, sampleCount);
+        }
+        if (state.traceStyle !== "lines") {
+          gl.useProgram(traceProgram);
+          setTraceUniforms(loc.trace, sampleCount, pointScale, time);
+          gl.drawArrays(gl.POINTS, 0, sampleCount);
+        }
+        gl.disable(gl.BLEND);
+      }
+
+      function drawBloom(sourceTex, targets, targetWidth, targetHeight) {
+        gl.disable(gl.BLEND);
+        gl.useProgram(bloomProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.uniform1i(loc.bloom.source, 0);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, targets[0].fb);
+        gl.viewport(0, 0, targetWidth, targetHeight);
+        gl.bindTexture(gl.TEXTURE_2D, sourceTex);
+        gl.uniform2f(loc.bloom.resolution, targetWidth, targetHeight);
+        gl.uniform2f(loc.bloom.direction, 1, 0);
+        gl.uniform1i(loc.bloom.extract, 1);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, targets[1].fb);
+        gl.viewport(0, 0, targetWidth, targetHeight);
+        gl.bindTexture(gl.TEXTURE_2D, targets[0].tex);
+        gl.uniform2f(loc.bloom.direction, 0, 1);
+        gl.uniform1i(loc.bloom.extract, 0);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+
+      function presentFrame(sourceTex, bloomTex, targetFb, targetWidth, targetHeight) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, targetFb);
+        gl.viewport(0, 0, targetWidth, targetHeight);
+        gl.disable(gl.BLEND);
+        gl.useProgram(presentProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, sourceTex);
+        gl.uniform1i(loc.present.tex, 0);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, bloomTex);
+        gl.uniform1i(loc.present.bloom, 1);
+        gl.uniform2f(loc.present.resolution, targetWidth, targetHeight);
+        gl.uniform3f(loc.present.phosphorColor, state.phosphorColor[0], state.phosphorColor[1], state.phosphorColor[2]);
+        gl.uniform1f(loc.present.bloomStrength, state.bloom);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+
+      function createRenderTarget(targetWidth, targetHeight) {
+        const target = { tex: gl.createTexture(), fb: gl.createFramebuffer() };
+        configureTexture(target, targetWidth, targetHeight);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
+        const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if (status !== gl.FRAMEBUFFER_COMPLETE) {
+          throw new Error(`Framebuffer is not complete (${status})`);
+        }
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        return target;
+      }
+
+      function deleteRenderTarget(target) {
+        gl.deleteFramebuffer(target.fb);
+        gl.deleteTexture(target.tex);
+      }
+
+      function pixelsToPngBlob(pixels, targetWidth, targetHeight) {
+        const flipped = new Uint8ClampedArray(pixels.length);
+        const stride = targetWidth * 4;
+        for (let y = 0; y < targetHeight; y++) {
+          const sourceStart = (targetHeight - 1 - y) * stride;
+          const destStart = y * stride;
+          flipped.set(pixels.subarray(sourceStart, sourceStart + stride), destStart);
+        }
+        const image = new ImageData(flipped, targetWidth, targetHeight);
+        const outputCanvas = document.createElement("canvas");
+        outputCanvas.width = targetWidth;
+        outputCanvas.height = targetHeight;
+        const ctx = outputCanvas.getContext("2d");
+        ctx.putImageData(image, 0, 0);
+        return new Promise(resolve => outputCanvas.toBlob(resolve, "image/png"));
+      }
+
+      function triggerDownload(blob, filename) {
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+
+      async function saveExportImage() {
+        resize();
+        savePng.disabled = true;
+        exportStatus.textContent = "Rendering export...";
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const requestedWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr * state.exportScale));
+        const requestedHeight = Math.max(1, Math.floor(canvas.clientHeight * dpr * state.exportScale));
+        const capScale = Math.min(1, exportMaxDimension / Math.max(requestedWidth, requestedHeight));
+        const exportWidth = Math.max(1, Math.floor(requestedWidth * capScale));
+        const exportHeight = Math.max(1, Math.floor(requestedHeight * capScale));
+        const bloomExportWidth = Math.max(1, Math.floor(exportWidth * 0.5));
+        const bloomExportHeight = Math.max(1, Math.floor(exportHeight * 0.5));
+        const exportSamples = Math.max(state.samples, state.exportSamples) | 0;
+        const targets = [];
+        try {
+          const read = createRenderTarget(exportWidth, exportHeight);
+          const write = createRenderTarget(exportWidth, exportHeight);
+          const finalTarget = createRenderTarget(exportWidth, exportHeight);
+          const bloomA = createRenderTarget(bloomExportWidth, bloomExportHeight);
+          const bloomB = createRenderTarget(bloomExportWidth, bloomExportHeight);
+          targets.push(read, write, finalTarget, bloomA, bloomB);
+          const pointScale = state.focus * dpr * state.exportScale * capScale;
+          drawAccumulatedFrame(read.tex, write.fb, exportWidth, exportHeight, exportSamples, pointScale, simTime, 1.0);
+          drawBloom(write.tex, [bloomA, bloomB], bloomExportWidth, bloomExportHeight);
+          presentFrame(write.tex, bloomB.tex, finalTarget.fb, exportWidth, exportHeight);
+          const pixels = new Uint8Array(exportWidth * exportHeight * 4);
+          gl.readPixels(0, 0, exportWidth, exportHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+          const blob = await pixelsToPngBlob(pixels, exportWidth, exportHeight);
+          if (!blob) {
+            throw new Error("PNG encoding failed");
+          }
+          const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+          triggerDownload(blob, `waveform-visualizer-${stamp}.png`);
+          exportStatus.textContent = `Saved ${exportWidth} x ${exportHeight} / ${exportSamples} samples${capScale < 1 ? " (capped)" : ""}`;
+        } catch (error) {
+          exportStatus.textContent = error instanceof Error ? error.message : "Export failed";
+        } finally {
+          for (const target of targets) {
+            deleteRenderTarget(target);
+          }
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          savePng.disabled = false;
+        }
+      }
 
       function render(now) {
         resize();
@@ -1051,41 +1413,20 @@
         const read = buffers[readIndex];
         const write = buffers[1 - readIndex];
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, write.fb);
-        gl.viewport(0, 0, width, height);
-        gl.disable(gl.BLEND);
-        gl.useProgram(fadeProgram);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, read.tex);
-        gl.uniform1i(loc.fade.prev, 0);
-        gl.uniform1f(loc.fade.persistence, state.frozen ? 1.0 : state.persistence);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-        gl.useProgram(traceProgram);
-        gl.uniform1f(loc.trace.time, simTime);
-        gl.uniform1f(loc.trace.traceWindow, state.window);
-        gl.uniform1f(loc.trace.sampleCount, state.samples);
-        gl.uniform1f(loc.trace.pointSize, state.focus * Math.min(window.devicePixelRatio || 1, 2));
-        gl.uniform4f(loc.trace.oscX, state.x.freq, state.x.amp, state.x.phase, state.x.offset);
-        gl.uniform4f(loc.trace.oscY, state.y.freq, state.y.amp, state.y.phase, state.y.offset);
-        gl.uniform1i(loc.trace.waveX, state.x.wave);
-        gl.uniform1i(loc.trace.waveY, state.y.wave);
-        gl.uniform1f(loc.trace.intensity, state.intensity);
-        gl.drawArrays(gl.POINTS, 0, state.samples);
-        gl.disable(gl.BLEND);
+        drawAccumulatedFrame(
+          read.tex,
+          write.fb,
+          width,
+          height,
+          state.samples,
+          state.focus * Math.min(window.devicePixelRatio || 1, 2),
+          simTime,
+          state.frozen ? 1.0 : state.persistence
+        );
 
         readIndex = 1 - readIndex;
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.viewport(0, 0, width, height);
-        gl.useProgram(presentProgram);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, write.tex);
-        gl.uniform1i(loc.present.tex, 0);
-        gl.uniform2f(loc.present.resolution, width, height);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        drawBloom(write.tex, bloomBuffers, bloomWidth, bloomHeight);
+        presentFrame(write.tex, bloomBuffers[1].tex, null, width, height);
 
         fpsFrames++;
         if (now - fpsLast > 350) {
@@ -1102,6 +1443,7 @@
       }
 
       window.addEventListener("resize", resize, { passive: true });
+      savePng.addEventListener("click", saveExportImage);
       requestAnimationFrame(render);
     })();
   </script>

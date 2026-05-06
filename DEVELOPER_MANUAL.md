@@ -4,7 +4,7 @@
 
 Waveform Visualizer is a dependency-free single-page WebGL2 application. The full app lives in `index.html`, with project-level usage notes in `README.md`.
 
-The app renders an XY oscilloscope by evaluating two oscillators in a GPU vertex shader. Each generated point becomes a glowing phosphor sample. A ping-pong framebuffer pair keeps previous samples alive, fades them over time, and presents the final image with grid, glow, scanline, and vignette effects.
+The app renders an XY oscilloscope by evaluating two oscillators in a GPU vertex shader. Generated samples can be drawn as connected lines, point sprites, or both. A ping-pong framebuffer pair keeps previous samples alive, fades them over time with per-channel decay, runs a separate bloom pass, and presents the final image with grid, phosphor color, scanline, and vignette effects.
 
 ## Repository Layout
 
@@ -87,8 +87,15 @@ const state = {
   persistence: 0.972,
   intensity: 0.32,
   focus: 2.4,
+  traceAntialias: 0.54,
+  traceStyle: "hybrid",
+  phosphorColor: [0.36, 1.0, 0.62],
+  decay: { r: 0.92, g: 1.0, b: 0.96 },
+  bloom: 0.82,
   window: 0.032,
   samples: 8192,
+  exportScale: 2,
+  exportSamples: 32768,
   frozen: false
 };
 ```
@@ -130,9 +137,21 @@ const state = {
 
 `focus` controls WebGL point size.
 
+`traceAntialias` controls point falloff and local halo softness separately from point size.
+
+`traceStyle` can be `hybrid`, `points`, or `lines`. Hybrid draws a connected `LINE_STRIP` plus point sprites.
+
+`phosphorColor` is an RGB array sent to the trace and present shaders.
+
+`decay` stores RGB channel decay multipliers that are combined with global persistence in the fade pass.
+
+`bloom` controls how strongly the blurred bloom texture is mixed into the final present pass.
+
 `window` controls the amount of oscillator time covered per frame.
 
 `samples` controls how many GPU points are drawn per frame.
+
+`exportScale` and `exportSamples` are one-shot overrides for PNG export. They do not alter live render resolution or live sample count.
 
 `frozen` pauses simulation time and disables fading by sending `1.0` as persistence.
 
@@ -194,7 +213,7 @@ Frequency edits switch the global mode back to `hz`. Note edits apply the active
 
 ### Display Controls
 
-`wireDisplay()` binds the persistence, intensity, focus, trace window, and samples-per-frame sliders.
+`wireDisplay()` binds the persistence, intensity, focus, trace antialias, RGB decay, bloom, trace window, samples-per-frame, export scale, and export sample controls. It also wires trace style and phosphor color inputs.
 
 Most display sliders use `bindNumberControl(input, out, getter, setter, format)` to update state and visible output text.
 
@@ -222,10 +241,12 @@ In the render loop:
 
 ## WebGL Rendering Pipeline
 
-The renderer uses three shader programs:
+The renderer uses five shader programs:
 
 - fade program
-- trace program
+- trace point program
+- trace line program
+- bloom program
 - present program
 
 The render loop runs once per animation frame.
@@ -255,7 +276,7 @@ const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
 The cap at `2` prevents very high-DPI screens from creating unnecessarily expensive framebuffers.
 
-When size changes, both textures are reallocated as `RGBA8`, attached to framebuffers, cleared, and the viewport is updated.
+When size changes, the persistence and half-resolution bloom textures are reallocated, attached to framebuffers, cleared, and the viewport is updated.
 
 ### Pass 1: Fade
 
@@ -266,13 +287,13 @@ Shader pair:
 - `vertFull`
 - `fragFade`
 
-`fragFade` samples the previous texture and multiplies it by `uPersistence`.
+`fragFade` samples the previous texture and multiplies it by a `vec3 uDecay` value. JavaScript builds that value from global persistence and the red, green, and blue decay controls.
 
 When frozen, JavaScript sends `1.0` so old pixels remain.
 
 ### Pass 2: Trace
 
-The trace pass draws `state.samples` points into the same write framebuffer using additive blending.
+The trace pass draws `state.samples` into the same write framebuffer using additive blending. In `hybrid` mode it draws a connected `LINE_STRIP` first, then point sprites over it. `points` and `lines` modes draw only their named path.
 
 Shader pair:
 
@@ -292,6 +313,8 @@ Important uniforms:
 - `uWaveX`
 - `uWaveY`
 - `uIntensity`
+- `uAntialias`
+- `uPhosphorColor`
 
 `uOscX` and `uOscY` are packed as:
 
@@ -308,11 +331,22 @@ clamp(y, -1.08, 1.08)
 
 This allows edge glow while keeping geometry bounded.
 
-The fragment shader uses `gl_PointCoord` to create a bright core and soft halo for every point.
+The point fragment shader uses `gl_PointCoord` to create a bright core and soft halo for every point. The line fragment shader uses the same oscillator positions but avoids `gl_PointCoord`, which keeps the connected path valid for non-point primitives.
 
-### Pass 3: Present
+### Pass 3: Bloom
 
-The present pass renders the latest write texture to the screen.
+The bloom pass runs after trace accumulation and before final presentation.
+
+Shader pair:
+
+- `vertFull`
+- `fragBloom`
+
+The first bloom pass extracts bright trace energy and applies a horizontal blur into the first bloom buffer. The second pass vertically blurs that texture into the second bloom buffer. The live bloom targets run at half resolution to keep the pass affordable.
+
+### Pass 4: Present
+
+The present pass renders the latest write texture and bloom texture to the screen.
 
 Shader pair:
 
@@ -321,7 +355,7 @@ Shader pair:
 
 The present shader adds:
 
-- horizontal and vertical blur taps for glow
+- bloom texture
 - minor grid lines
 - major grid lines
 - center crosshair
@@ -331,6 +365,12 @@ The present shader adds:
 - background tint
 
 The result is clamped to `[0, 1]` before output.
+
+### PNG Export
+
+`saveExportImage()` renders a one-shot export through temporary offscreen framebuffers. It uses the current oscillator state, `max(state.samples, state.exportSamples)`, and a higher render target derived from `exportScale`. The export path reads back the final presented framebuffer, flips the pixel rows for canvas coordinates, encodes through a temporary 2D canvas, and triggers a PNG download.
+
+Export dimensions are capped by the smaller of `MAX_TEXTURE_SIZE` and `4096` to avoid creating oversized render targets. The exported PNG contains the WebGL scope render only; DOM overlays are intentionally not captured.
 
 ## Performance Notes
 
@@ -374,10 +414,11 @@ After changing code, run through this checklist:
 6. Switch Mode to `Interval` and confirm interval changes affect Y relative to X.
 7. Switch between `Equal` and `Just` and confirm interval-derived frequencies change where expected.
 8. Test all four waveforms on both oscillators.
-9. Adjust Persistence, Trace intensity, Focus, Trace window, and Samples/frame.
+9. Adjust Persistence, Trace intensity, Focus, Trace antialias, Trace style, Phosphor color, RGB decay, Bloom, Trace window, and Samples/frame.
 10. Test Classic ratio, Rosette, Square XY, Freeze, and Resume.
 11. Resize the browser and confirm the canvas remains sharp and fills the stage.
-12. Test a narrow viewport to confirm the control panel moves below the display.
+12. Save a PNG at default export quality and confirm a non-empty download.
+13. Test a narrow viewport to confirm the control panel moves below the display.
 
 ## Suggested Automated Tests
 
@@ -385,9 +426,10 @@ This project currently has no automated tests. If it grows beyond a single-file 
 
 - pure function tests for note parsing, MIDI conversion, interval ratios, and frequency clamping
 - DOM tests for mode switching and disabled control states
-- shader compile smoke tests in a headless browser
+- shader compile smoke tests in a real WebGL browser
 - Playwright visual smoke tests for default render, presets, and responsive layout
 - performance smoke tests for high sample counts
+- export smoke tests for framebuffer allocation and PNG download
 
 ## Development Guidelines
 
@@ -414,7 +456,7 @@ When adding shader uniforms, update:
 - `loc` uniform lookup
 - render-loop uniform upload
 
-When changing framebuffer formats, test on multiple browsers and GPUs. `RGBA8` is widely supported and appropriate for the current glow buffer.
+When changing framebuffer formats, test on multiple browsers and GPUs. The current path uses unsigned-byte RGBA textures for broad compatibility.
 
 ## Common Extension Points
 
@@ -455,9 +497,7 @@ Use Web MIDI where available. Map MIDI CC or note input to state changes, then r
 - Fully implement the `Reference` tuning control so A reference or base tuning affects note and interval calculations.
 - Add save/load for custom presets.
 - Add JSON import/export for full app state.
-- Add screenshot export using `canvas.toBlob()` or an explicit render target export path.
 - Add more waveform types, such as pulse width, noise, sample-and-hold, exponential curve, and custom harmonic blends.
-- Add color and phosphor theme controls.
 - Add optional audio output through Web Audio.
 - Add MIDI input mappings for live control.
 - Add richer onboarding help without cluttering the main panel.
