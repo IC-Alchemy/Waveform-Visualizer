@@ -142,6 +142,77 @@
       font-weight: 600;
     }
 
+    .helpAnchor,
+    .labelTitle {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .tipWrap {
+      position: relative;
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+    }
+
+    .helpButton {
+      display: inline-grid;
+      place-items: center;
+      width: 17px;
+      height: 17px;
+      min-height: 17px;
+      padding: 0;
+      border-color: rgba(139, 255, 195, 0.34);
+      border-radius: 50%;
+      background: rgba(98, 255, 159, 0.08);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      text-transform: none;
+    }
+
+    .helpButton:hover,
+    .helpButton:focus-visible,
+    .tipWrap[data-open="true"] .helpButton {
+      border-color: rgba(98, 255, 159, 0.78);
+      background: rgba(98, 255, 159, 0.18);
+      color: white;
+      outline: none;
+    }
+
+    .tipBubble {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 30;
+      display: none;
+      width: min(278px, calc(100vw - 34px));
+      padding: 10px 11px;
+      border: 1px solid rgba(139, 255, 195, 0.28);
+      border-radius: 6px;
+      background: #071011;
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.46);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.35;
+      text-transform: none;
+    }
+
+    .tipWrap[data-open="true"] .tipBubble {
+      display: block;
+    }
+
+    .tipBubble strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #f3fff8;
+      font-size: 12px;
+    }
+
     label,
     .controlLabel {
       display: grid;
@@ -324,23 +395,23 @@
     <section class="section">
       <h2>Tuning <span>note / interval</span></h2>
       <div class="compactGrid">
-        <label>Mode
+        <label data-help-key="frequencyMode">Mode
           <select id="frequencyMode">
             <option value="hz">Hz</option>
             <option value="note">Note</option>
             <option value="interval">Interval</option>
           </select>
         </label>
-        <label>Interval
+        <label data-help-key="globalInterval">Interval
           <select id="globalInterval"></select>
         </label>
-        <div class="controlLabel">Temperament
+        <div class="controlLabel" data-help-key="temperament">Temperament
           <div class="segmented" id="temperament" role="group" aria-label="Temperament">
             <button type="button" data-temperament="equal" aria-pressed="true">Equal</button>
             <button type="button" data-temperament="just" aria-pressed="false">Just</button>
           </div>
         </div>
-        <label>Reference
+        <label data-help-key="referenceFreq">Reference
           <input id="referenceFreq" type="number" min="0.1" max="520" step="0.01" value="110">
         </label>
       </div>
@@ -348,7 +419,7 @@
 
     <section class="section" data-osc="x">
       <h2>Oscillator X <span>horizontal</span></h2>
-      <label>Waveform
+      <label data-help-key="waveX">Waveform
         <select data-param="wave">
           <option value="0">Sine</option>
           <option value="1">Triangle</option>
@@ -356,25 +427,25 @@
           <option value="3">Saw</option>
         </select>
       </label>
-      <label>
+      <label data-help-key="freqX">
         <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
         <input class="freqNumber" type="number" min="0.1" max="520" step="0.01" value="110" data-param="freqNumber" aria-label="Oscillator X frequency in Hz">
         <input type="range" min="0.1" max="520" step="0.01" value="110" data-param="freq">
       </label>
       <div class="compactGrid">
-        <label>Note
+        <label data-help-key="noteX">Note
           <select data-param="note"></select>
         </label>
       </div>
-      <label>
+      <label data-help-key="ampX">
         <span class="row"><span>Amplitude</span><output data-out="amp"></output></span>
         <input type="range" min="0" max="1" step="0.001" value="0.74" data-param="amp">
       </label>
-      <label>
+      <label data-help-key="phaseX">
         <span class="row"><span>Phase</span><output data-out="phase"></output></span>
         <input type="range" min="-180" max="180" step="0.1" value="0" data-param="phase">
       </label>
-      <label>
+      <label data-help-key="offsetX">
         <span class="row"><span>Offset</span><output data-out="offset"></output></span>
         <input type="range" min="-0.9" max="0.9" step="0.001" value="0" data-param="offset">
       </label>
@@ -382,7 +453,7 @@
 
     <section class="section" data-osc="y">
       <h2>Oscillator Y <span>vertical</span></h2>
-      <label>Waveform
+      <label data-help-key="waveY">Waveform
         <select data-param="wave">
           <option value="0">Sine</option>
           <option value="1">Triangle</option>
@@ -390,25 +461,25 @@
           <option value="3">Saw</option>
         </select>
       </label>
-      <label>
+      <label data-help-key="freqY">
         <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
         <input class="freqNumber" type="number" min="0.1" max="520" step="0.01" value="165" data-param="freqNumber" aria-label="Oscillator Y frequency in Hz">
         <input type="range" min="0.1" max="520" step="0.01" value="165" data-param="freq">
       </label>
       <div class="compactGrid">
-        <label>Note
+        <label data-help-key="noteY">Note
           <select data-param="note"></select>
         </label>
       </div>
-      <label>
+      <label data-help-key="ampY">
         <span class="row"><span>Amplitude</span><output data-out="amp"></output></span>
         <input type="range" min="0" max="1" step="0.001" value="0.74" data-param="amp">
       </label>
-      <label>
+      <label data-help-key="phaseY">
         <span class="row"><span>Phase</span><output data-out="phase"></output></span>
         <input type="range" min="-180" max="180" step="0.1" value="90" data-param="phase">
       </label>
-      <label>
+      <label data-help-key="offsetY">
         <span class="row"><span>Offset</span><output data-out="offset"></output></span>
         <input type="range" min="-0.9" max="0.9" step="0.001" value="0" data-param="offset">
       </label>
@@ -416,55 +487,55 @@
 
     <section class="section">
       <h2>Display <span>phosphor</span></h2>
-      <label>
+      <label data-help-key="persistence">
         <span class="row"><span>Persistence</span><output data-out="persistence"></output></span>
         <input id="persistence" type="range" min="0.86" max="0.997" step="0.001" value="0.972">
       </label>
-      <label>
+      <label data-help-key="intensity">
         <span class="row"><span>Trace intensity</span><output data-out="intensity"></output></span>
         <input id="intensity" type="range" min="0.04" max="0.9" step="0.001" value="0.32">
       </label>
-      <label>
+      <label data-help-key="focus">
         <span class="row"><span>Focus</span><output data-out="focus"></output></span>
         <input id="focus" type="range" min="1.2" max="5" step="0.1" value="2.4">
       </label>
-      <label>
+      <label data-help-key="traceAntialias">
         <span class="row"><span>Trace antialias</span><output data-out="traceAntialias"></output></span>
         <input id="traceAntialias" type="range" min="0" max="1" step="0.01" value="0.54">
       </label>
       <div class="compactGrid">
-        <label>Trace style
+        <label data-help-key="traceStyle">Trace style
           <select id="traceStyle">
             <option value="hybrid">Hybrid</option>
             <option value="points">Points</option>
             <option value="lines">Connected</option>
           </select>
         </label>
-        <label>Phosphor color
+        <label data-help-key="phosphorColor">Phosphor color
           <input id="phosphorColor" type="color" value="#5cff9f" aria-label="Phosphor color">
         </label>
       </div>
-      <label>
+      <label data-help-key="decayR">
         <span class="row"><span>Red decay</span><output data-out="decayR"></output></span>
         <input id="decayR" type="range" min="0.82" max="1" step="0.001" value="0.920">
       </label>
-      <label>
+      <label data-help-key="decayG">
         <span class="row"><span>Green decay</span><output data-out="decayG"></output></span>
         <input id="decayG" type="range" min="0.82" max="1" step="0.001" value="1.000">
       </label>
-      <label>
+      <label data-help-key="decayB">
         <span class="row"><span>Blue decay</span><output data-out="decayB"></output></span>
         <input id="decayB" type="range" min="0.82" max="1" step="0.001" value="0.960">
       </label>
-      <label>
+      <label data-help-key="bloom">
         <span class="row"><span>Bloom</span><output data-out="bloom"></output></span>
         <input id="bloom" type="range" min="0" max="2.2" step="0.01" value="0.82">
       </label>
-      <label>
+      <label data-help-key="traceWindow">
         <span class="row"><span>Trace window</span><output data-out="window"></output></span>
         <input id="window" type="range" min="0.002" max="0.08" step="0.001" value="0.032">
       </label>
-      <label>
+      <label data-help-key="samples">
         <span class="row"><span>Samples/frame</span><output data-out="samples"></output></span>
         <input id="samples" type="range" min="512" max="16384" step="512" value="8192">
       </label>
@@ -482,11 +553,11 @@
         <div class="stat">Frame rate<strong id="fps">0</strong></div>
         <div class="stat">GPU samples<strong id="sampleStat">0</strong></div>
       </div>
-      <label>
+      <label data-help-key="exportScale">
         <span class="row"><span>Export scale</span><output data-out="exportScale"></output></span>
         <input id="exportScale" type="range" min="1" max="3" step="0.5" value="2">
       </label>
-      <label>
+      <label data-help-key="exportSamples">
         <span class="row"><span>Export samples</span><output data-out="exportSamples"></output></span>
         <input id="exportSamples" type="range" min="16384" max="65536" step="4096" value="32768">
       </label>
@@ -569,6 +640,128 @@
       const INTERVAL_BY_VALUE = new Map(INTERVALS.map(interval => [interval.value, interval]));
       const MIN_NOTE_MIDI = 12;
       const MAX_NOTE_MIDI = 119;
+      const HELP_TEXT = {
+        frequencyMode: {
+          title: "Frequency mode",
+          text: "Hz lets each oscillator run at the exact number you type or slide to. Note snaps each oscillator to a musical note. Interval uses X as the base note and sets Y by the selected musical interval."
+        },
+        globalInterval: {
+          title: "Interval",
+          text: "Only active in Interval mode. It chooses the musical distance from oscillator X to oscillator Y, such as unison, perfect fifth, octave, or compound intervals."
+        },
+        temperament: {
+          title: "Temperament",
+          text: "Equal uses twelve-tone equal temperament, where every semitone has the same ratio. Just uses simple ratios for stronger harmonic locking in interval mode. Direct Hz mode is not quantized."
+        },
+        referenceFreq: {
+          title: "Reference",
+          text: "Stored tuning reference in Hz. The current note system mostly uses fixed A440/C4-derived calculations, so this is reserved for deeper retuning behavior and fallback frequency handling."
+        },
+        waveX: {
+          title: "X waveform",
+          text: "Chooses the signal shape that drives horizontal motion. Sine is smooth, triangle is linear and folded, soft square makes boxier corners, and saw creates angled ramps."
+        },
+        freqX: {
+          title: "X frequency",
+          text: "Sets the horizontal oscillator speed in Hz. Simple ratios against Y, such as 1:1, 2:3, 3:4, or 3:5, usually make more stable Lissajous figures."
+        },
+        noteX: {
+          title: "X note",
+          text: "Chooses oscillator X by musical note when Note or Interval mode is active. In Interval mode this note is the base pitch used to calculate Y."
+        },
+        ampX: {
+          title: "X amplitude",
+          text: "Controls horizontal size. At 0 the image collapses toward a vertical line; higher values spread the trace farther left and right."
+        },
+        phaseX: {
+          title: "X phase",
+          text: "Offsets horizontal timing from -180 to 180 degrees. Phase changes the relationship between axes, turning matching sine waves into lines, ellipses, circles, or rotated forms."
+        },
+        offsetX: {
+          title: "X offset",
+          text: "Moves the whole pattern left or right. Positive values shift right, negative values shift left, and large offsets can push the trace toward the scope edge."
+        },
+        waveY: {
+          title: "Y waveform",
+          text: "Chooses the signal shape that drives vertical motion. Matching X gives classic figures; mixing shapes produces folded grids, corners, and asymmetric motion."
+        },
+        freqY: {
+          title: "Y frequency",
+          text: "Sets the vertical oscillator speed in Hz. Its ratio against X controls whether the trace locks into a simple figure or drifts through a complex pattern."
+        },
+        noteY: {
+          title: "Y note",
+          text: "Chooses oscillator Y by musical note when Note mode is active. In Interval mode Y is calculated from X plus the selected interval, so this control reflects that relationship."
+        },
+        ampY: {
+          title: "Y amplitude",
+          text: "Controls vertical size. At 0 the image collapses toward a horizontal line; higher values stretch the trace up and down."
+        },
+        phaseY: {
+          title: "Y phase",
+          text: "Offsets vertical timing from -180 to 180 degrees. The default 90 degree Y phase opens the starting sine pattern into a rounder Lissajous figure."
+        },
+        offsetY: {
+          title: "Y offset",
+          text: "Moves the whole pattern up or down. Positive values shift up, negative values shift down, and large offsets can push parts of the trace off center."
+        },
+        persistence: {
+          title: "Persistence",
+          text: "Controls how slowly old trace data fades. Lower values clear quickly and emphasize the newest path; higher values create longer analog-style phosphor trails."
+        },
+        intensity: {
+          title: "Trace intensity",
+          text: "Controls how strongly new samples are added to the persistence buffer. Raise it for a brighter trace, lower it when the image saturates or loses detail."
+        },
+        focus: {
+          title: "Focus",
+          text: "Sets the point size used for trace samples. Lower values make a thinner line; higher values make the trace thicker and add more phosphor energy."
+        },
+        traceAntialias: {
+          title: "Trace antialias",
+          text: "Softens trace edges independently from Focus. Lower values are sharper and more pixel-like; higher values smooth points and lines for a cleaner phosphor edge."
+        },
+        traceStyle: {
+          title: "Trace style",
+          text: "Hybrid draws both connected lines and points. Points gives a dotted sample-based oscilloscope look. Connected emphasizes continuous curves."
+        },
+        phosphorColor: {
+          title: "Phosphor color",
+          text: "Changes the trace and grid tint. Green feels like a classic CRT, amber is warmer, and blue-white reads as a sharper electronic display."
+        },
+        decayR: {
+          title: "Red decay",
+          text: "Controls how long the red color channel remains in the persistence buffer. Uneven RGB decay creates color trails as older samples fade."
+        },
+        decayG: {
+          title: "Green decay",
+          text: "Controls how long the green channel remains. Keeping green high preserves the classic phosphor body while other channels fade around it."
+        },
+        decayB: {
+          title: "Blue decay",
+          text: "Controls how long the blue channel remains. Raising it can make cooler afterglow trails; lowering it keeps the image closer to green phosphor."
+        },
+        bloom: {
+          title: "Bloom",
+          text: "Controls the separate blurred glow pass. Raise it for a wider luminous aura, or lower it when the trace needs to stay crisp."
+        },
+        traceWindow: {
+          title: "Trace window",
+          text: "Controls how much oscillator time is drawn each frame. Short windows show a tighter live segment; longer windows reveal more cycles and denser figures."
+        },
+        samples: {
+          title: "Samples per frame",
+          text: "Sets how many points the GPU draws each animation frame. Higher values are smoother but cost more GPU work; lower values improve performance but can look sparse."
+        },
+        exportScale: {
+          title: "Export scale",
+          text: "Sets the temporary resolution multiplier used only when saving a PNG. It does not change the live canvas, and the app caps export size to the GPU texture limit."
+        },
+        exportSamples: {
+          title: "Export samples",
+          text: "Sets the temporary sample count used only for saved PNGs. Higher values produce denser exported curves without changing live performance."
+        }
+      };
 
       const vertFull = `#version 300 es
         const vec2 POS[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
@@ -870,6 +1063,115 @@
       }
 
       const oscControls = { x: null, y: null };
+
+      function setupHelpTips() {
+        const tips = [];
+        const closeAll = except => {
+          for (const tip of tips) {
+            if (tip !== except) {
+              tip.wrap.dataset.open = "false";
+              tip.button.setAttribute("aria-expanded", "false");
+            }
+          }
+        };
+
+        const positionBubble = (button, bubble) => {
+          const margin = 17;
+          const buttonRect = button.getBoundingClientRect();
+          const width = Math.min(278, Math.max(180, window.innerWidth - margin * 2));
+          bubble.style.width = `${width}px`;
+
+          const left = Math.min(
+            Math.max(margin, buttonRect.left + buttonRect.width * 0.5 - width * 0.5),
+            window.innerWidth - width - margin
+          );
+          const below = buttonRect.bottom + 8;
+          const bubbleHeight = bubble.offsetHeight;
+          const above = buttonRect.top - bubbleHeight - 8;
+          const top = below + bubbleHeight + margin <= window.innerHeight
+            ? below
+            : Math.max(margin, above);
+
+          bubble.style.left = `${left}px`;
+          bubble.style.top = `${top}px`;
+        };
+
+        const findHelpAnchor = control => {
+          const rowTitle = control.querySelector(".row > span:first-child");
+          if (rowTitle) {
+            return rowTitle;
+          }
+
+          for (const node of control.childNodes) {
+            if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+              const title = document.createElement("span");
+              title.className = "labelTitle";
+              title.textContent = node.textContent.trim();
+              control.replaceChild(title, node);
+              return title;
+            }
+          }
+
+          return null;
+        };
+
+        for (const control of document.querySelectorAll("[data-help-key]")) {
+          const help = HELP_TEXT[control.dataset.helpKey];
+          const anchor = help ? findHelpAnchor(control) : null;
+          if (!anchor) {
+            continue;
+          }
+
+          const id = `tip-${control.dataset.helpKey}`;
+          const wrap = document.createElement("span");
+          const button = document.createElement("button");
+          const bubble = document.createElement("span");
+          const title = document.createElement("strong");
+          const text = document.createElement("span");
+
+          anchor.classList.add("helpAnchor");
+          wrap.className = "tipWrap";
+          wrap.dataset.open = "false";
+          button.className = "helpButton";
+          button.type = "button";
+          button.textContent = "i";
+          button.setAttribute("aria-label", `Show help for ${help.title}`);
+          button.setAttribute("aria-expanded", "false");
+          button.setAttribute("aria-controls", id);
+          bubble.className = "tipBubble";
+          bubble.id = id;
+          bubble.setAttribute("role", "tooltip");
+          title.textContent = help.title;
+          text.textContent = help.text;
+          bubble.append(title, text);
+          wrap.append(button, bubble);
+          anchor.appendChild(wrap);
+
+          const tip = { wrap, button };
+          tips.push(tip);
+
+          button.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const willOpen = wrap.dataset.open !== "true";
+            closeAll(tip);
+            wrap.dataset.open = String(willOpen);
+            button.setAttribute("aria-expanded", String(willOpen));
+            if (willOpen) {
+              positionBubble(button, bubble);
+            }
+          });
+        }
+
+        document.addEventListener("click", () => closeAll(null));
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") {
+            closeAll(null);
+          }
+        });
+        window.addEventListener("resize", () => closeAll(null));
+        document.querySelector("aside").addEventListener("scroll", () => closeAll(null), { passive: true });
+      }
 
       function clampFrequency(value, fallback) {
         if (!Number.isFinite(value)) {
@@ -1207,6 +1509,7 @@
         syncGlobalModeControls();
       }
 
+      setupHelpTips();
       wireOsc(document.querySelector("[data-osc='x']"), "x");
       wireOsc(document.querySelector("[data-osc='y']"), "y");
       wireTuning();

@@ -319,7 +319,6 @@ This is expected. Directly editing a frequency switches the app back to `Hz` mod
 - Add import/export for settings as JSON.
 - Add audio output or optional Web Audio monitoring so users can hear the oscillator relationship.
 - Add MIDI input for controlling frequency, note, amplitude, phase, or presets.
-- Add tooltips or inline help for controls such as Trace Window, Focus, and Temperament.
 - Add keyboard shortcuts for freeze/resume, preset switching, and fine parameter changes.
 - Add a reset button for display-only settings.
 - Add mobile-specific control refinements for faster editing on touch screens.
