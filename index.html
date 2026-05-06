@@ -327,7 +327,7 @@
           </div>
         </div>
         <label>Reference
-          <input id="referenceFreq" type="number" min="0.1" max="520" step="0.1" value="110">
+          <input id="referenceFreq" type="number" min="0.1" max="520" step="0.01" value="110">
         </label>
       </div>
     </section>
@@ -344,8 +344,8 @@
       </label>
       <label>
         <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
-        <input class="freqNumber" type="number" min="0.1" max="520" step="0.1" value="110" data-param="freqNumber" aria-label="Oscillator X frequency in Hz">
-        <input type="range" min="0.1" max="520" step="0.1" value="110" data-param="freq">
+        <input class="freqNumber" type="number" min="0.1" max="520" step="0.01" value="110" data-param="freqNumber" aria-label="Oscillator X frequency in Hz">
+        <input type="range" min="0.1" max="520" step="0.01" value="110" data-param="freq">
       </label>
       <div class="compactGrid">
         <label>Note
@@ -378,8 +378,8 @@
       </label>
       <label>
         <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
-        <input class="freqNumber" type="number" min="0.1" max="520" step="0.1" value="165" data-param="freqNumber" aria-label="Oscillator Y frequency in Hz">
-        <input type="range" min="0.1" max="520" step="0.1" value="165" data-param="freq">
+        <input class="freqNumber" type="number" min="0.1" max="520" step="0.01" value="165" data-param="freqNumber" aria-label="Oscillator Y frequency in Hz">
+        <input type="range" min="0.1" max="520" step="0.01" value="165" data-param="freq">
       </label>
       <div class="compactGrid">
         <label>Note
@@ -729,7 +729,7 @@
       }
 
       function formatParam(param, value) {
-        if (param === "freq") return `${value.toFixed(1)} Hz`;
+        if (param === "freq") return `${value.toFixed(2)} Hz`;
         if (param === "phase") return `${value.toFixed(1)} deg`;
         return value.toFixed(3);
       }
@@ -801,7 +801,7 @@
         }
         const value = state[osc].freq;
         controls.freqRange.value = String(value);
-        controls.freqNumber.value = value.toFixed(1);
+        controls.freqNumber.value = value.toFixed(2);
         controls.freqOut.textContent = formatParam("freq", value);
       }
 
@@ -984,7 +984,7 @@
         });
         referenceFreq.addEventListener("change", () => {
           state.tuning.referenceFreq = clampFrequency(referenceFreq.valueAsNumber, state.tuning.referenceFreq);
-          referenceFreq.value = state.tuning.referenceFreq.toFixed(1);
+          referenceFreq.value = state.tuning.referenceFreq.toFixed(2);
           applyGlobalFrequencyMode();
         });
       }

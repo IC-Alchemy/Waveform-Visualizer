@@ -24,3 +24,8 @@ Then open `http://127.0.0.1:5177/`.
 - Tuning supports equal temperament and just intonation for note and interval calculations; direct Hz mode stays unquantized.
 - Display: persistence, trace intensity, focus, trace window, and samples per frame.
 - Presets: classic sine ratio, rosette, square XY, and freeze/resume.
+
+## Manuals
+
+- [User Manual](USER_MANUAL.md) explains every visible control, mode, preset, and troubleshooting path.
+- [Developer Manual](DEVELOPER_MANUAL.md) explains the single-file architecture, WebGL2 render pipeline, state flow, and improvement areas.
