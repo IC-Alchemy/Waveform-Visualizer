@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Waveform Visualizer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel: #11181a;
+      --panel-2: #0b1011;
+      --line: #2d4242;
+      --text: #d8eee8;
+      --muted: #85a19a;
+      --accent: #62ff9f;
+      --amber: #ffc766;
+      --control: #172326;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #050808;
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      letter-spacing: 0;
+    }
+
+    body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+    }
+
+    #scopeStage {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(56, 255, 145, 0.08), transparent 42%),
+        linear-gradient(145deg, #081011 0%, #020404 100%);
+    }
+
+    #scope {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .scope-label {
+      position: absolute;
+      left: 18px;
+      top: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: rgba(213, 255, 230, 0.72);
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: none;
+      text-transform: uppercase;
+    }
+
+    .pilot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(98, 255, 159, 0.95);
+    }
+
+    .readout {
+      position: absolute;
+      left: 18px;
+      bottom: 14px;
+      display: grid;
+      gap: 4px;
+      min-width: 210px;
+      color: rgba(213, 255, 230, 0.68);
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      pointer-events: none;
+    }
+
+    aside {
+      min-width: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-left: 1px solid rgba(111, 255, 178, 0.15);
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      box-shadow: -18px 0 48px rgba(0, 0, 0, 0.42);
+      padding: 18px;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 20px;
+      font-weight: 650;
+    }
+
+    .subhead {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .section {
+      border-top: 1px solid rgba(143, 255, 198, 0.13);
+      padding: 16px 0;
+    }
+
+    .section:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    h2 {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin: 0 0 12px;
+      color: #f3fff8;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    h2 span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      margin: 12px 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    output {
+      min-width: 66px;
+      color: #e8fff3;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    input,
+    select,
+    button {
+      font: inherit;
+    }
+
+    select,
+    button {
+      width: 100%;
+      border: 1px solid rgba(139, 255, 195, 0.18);
+      border-radius: 6px;
+      background: var(--control);
+      color: var(--text);
+      min-height: 34px;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button:hover {
+      border-color: rgba(98, 255, 159, 0.52);
+      color: white;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .buttonGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .statGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat {
+      padding: 8px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.22);
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 2px;
+      color: #f0fff6;
+      font-size: 17px;
+    }
+
+    @media (max-width: 860px) {
+      body {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(54vh, 1fr) auto;
+        overflow: auto;
+      }
+
+      #scopeStage {
+        min-height: 54vh;
+      }
+
+      aside {
+        height: auto;
+        border-left: 0;
+        border-top: 1px solid rgba(111, 255, 178, 0.15);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="scopeStage" aria-label="XY oscilloscope display">
+    <canvas id="scope"></canvas>
+    <div class="scope-label"><span class="pilot"></span><span>XY analog mode</span></div>
+    <div class="readout">
+      <div id="traceReadout">X 110.00 Hz  /  Y 165.00 Hz</div>
+      <div id="perfReadout">0 fps  /  0 samples</div>
+    </div>
+  </main>
+
+  <aside>
+    <h1>Waveform Visualizer</h1>
+    <p class="subhead">Two oscillators drive X and Y directly. Rendering uses WebGL2 persistence buffers and shader-generated phosphor traces.</p>
+
+    <section class="section" data-osc="x">
+      <h2>Oscillator X <span>horizontal</span></h2>
+      <label>Waveform
+        <select data-param="wave">
+          <option value="0">Sine</option>
+          <option value="1">Triangle</option>
+          <option value="2">Soft square</option>
+          <option value="3">Saw</option>
+        </select>
+      </label>
+      <label>
+        <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
+        <input type="range" min="0.1" max="520" step="0.1" value="110" data-param="freq">
+      </label>
+      <label>
+        <span class="row"><span>Amplitude</span><output data-out="amp"></output></span>
+        <input type="range" min="0" max="1" step="0.001" value="0.74" data-param="amp">
+      </label>
+      <label>
+        <span class="row"><span>Phase</span><output data-out="phase"></output></span>
+        <input type="range" min="-180" max="180" step="0.1" value="0" data-param="phase">
+      </label>
+      <label>
+        <span class="row"><span>Offset</span><output data-out="offset"></output></span>
+        <input type="range" min="-0.9" max="0.9" step="0.001" value="0" data-param="offset">
+      </label>
+    </section>
+
+    <section class="section" data-osc="y">
+      <h2>Oscillator Y <span>vertical</span></h2>
+      <label>Waveform
+        <select data-param="wave">
+          <option value="0">Sine</option>
+          <option value="1">Triangle</option>
+          <option value="2">Soft square</option>
+          <option value="3">Saw</option>
+        </select>
+      </label>
+      <label>
+        <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
+        <input type="range" min="0.1" max="520" step="0.1" value="165" data-param="freq">
+      </label>
+      <label>
+        <span class="row"><span>Amplitude</span><output data-out="amp"></output></span>
+        <input type="range" min="0" max="1" step="0.001" value="0.74" data-param="amp">
+      </label>
+      <label>
+        <span class="row"><span>Phase</span><output data-out="phase"></output></span>
+        <input type="range" min="-180" max="180" step="0.1" value="90" data-param="phase">
+      </label>
+      <label>
+        <span class="row"><span>Offset</span><output data-out="offset"></output></span>
+        <input type="range" min="-0.9" max="0.9" step="0.001" value="0" data-param="offset">
+      </label>
+    </section>
+
+    <section class="section">
+      <h2>Display <span>phosphor</span></h2>
+      <label>
+        <span class="row"><span>Persistence</span><output data-out="persistence"></output></span>
+        <input id="persistence" type="range" min="0.86" max="0.997" step="0.001" value="0.972">
+      </label>
+      <label>
+        <span class="row"><span>Trace intensity</span><output data-out="intensity"></output></span>
+        <input id="intensity" type="range" min="0.04" max="0.9" step="0.001" value="0.32">
+      </label>
+      <label>
+        <span class="row"><span>Focus</span><output data-out="focus"></output></span>
+        <input id="focus" type="range" min="1.2" max="5" step="0.1" value="2.4">
+      </label>
+      <label>
+        <span class="row"><span>Trace window</span><output data-out="window"></output></span>
+        <input id="window" type="range" min="0.002" max="0.08" step="0.001" value="0.032">
+      </label>
+      <label>
+        <span class="row"><span>Samples/frame</span><output data-out="samples"></output></span>
+        <input id="samples" type="range" min="512" max="16384" step="512" value="8192">
+      </label>
+      <div class="buttonGrid">
+        <button id="presetClassic" type="button">Classic ratio</button>
+        <button id="presetRosette" type="button">Rosette</button>
+        <button id="presetSquare" type="button">Square XY</button>
+        <button id="toggleFreeze" type="button">Freeze</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Renderer <span>live</span></h2>
+      <div class="statGrid">
+        <div class="stat">Frame rate<strong id="fps">0</strong></div>
+        <div class="stat">GPU samples<strong id="sampleStat">0</strong></div>
+      </div>
+    </section>
+  </aside>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const TAU = Math.PI * 2;
+      const canvas = document.getElementById("scope");
+      const gl = canvas.getContext("webgl2", {
+        antialias: false,
+        alpha: false,
+        depth: false,
+        stencil: false,
+        powerPreference: "high-performance",
+        preserveDrawingBuffer: false
+      });
+
+      if (!gl) {
+        document.body.innerHTML = "<main style='padding:32px;font:16px Segoe UI,sans-serif;color:white;background:#060909;min-height:100vh'>WebGL2 is required for the oscilloscope renderer.</main>";
+        return;
+      }
+
+      const state = {
+        x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0 },
+        y: { wave: 0, freq: 165, amp: 0.74, phase: 90, offset: 0 },
+        persistence: 0.972,
+        intensity: 0.32,
+        focus: 2.4,
+        window: 0.032,
+        samples: 8192,
+        frozen: false
+      };
+
+      const vertFull = `#version 300 es
+        const vec2 POS[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
+        out vec2 vUv;
+        void main() {
+          vec2 p = POS[gl_VertexID];
+          vUv = p * 0.5 + 0.5;
+          gl_Position = vec4(p, 0.0, 1.0);
+        }`;
+
+      const fragFade = `#version 300 es
+        precision highp float;
+        uniform sampler2D uPrev;
+        uniform float uPersistence;
+        in vec2 vUv;
+        out vec4 outColor;
+        void main() {
+          vec3 old = clamp(texture(uPrev, vUv).rgb, vec3(0.0), vec3(4.0));
+          outColor = vec4(old * uPersistence, 1.0);
+        }`;
+
+      const vertTrace = `#version 300 es
+        precision highp float;
+        uniform float uTime;
+        uniform float uTraceWindow;
+        uniform float uSampleCount;
+        uniform float uPointSize;
+        uniform vec4 uOscX;
+        uniform vec4 uOscY;
+        uniform int uWaveX;
+        uniform int uWaveY;
+        out float vAge;
+
+        float osc(float t, int wave) {
+          float s = sin(t);
+          if (wave == 0) {
+            return s;
+          }
+          if (wave == 1) {
+            return asin(s) * 0.63661977236;
+          }
+          if (wave == 2) {
+            return tanh(s * 5.8);
+          }
+          float p = fract(t * 0.15915494309);
+          return p * 2.0 - 1.0;
+        }
+
+        void main() {
+          float id = float(gl_VertexID);
+          float f = id / max(uSampleCount - 1.0, 1.0);
+          float localTime = uTime + f * uTraceWindow;
+          float xPhase = radians(uOscX.z);
+          float yPhase = radians(uOscY.z);
+          float x = osc(6.28318530718 * uOscX.x * localTime + xPhase, uWaveX) * uOscX.y + uOscX.w;
+          float y = osc(6.28318530718 * uOscY.x * localTime + yPhase, uWaveY) * uOscY.y + uOscY.w;
+          gl_Position = vec4(clamp(x, -1.08, 1.08), clamp(y, -1.08, 1.08), 0.0, 1.0);
+          gl_PointSize = uPointSize;
+          vAge = smoothstep(0.0, 1.0, f);
+        }`;
+
+      const fragTrace = `#version 300 es
+        precision highp float;
+        uniform float uIntensity;
+        in float vAge;
+        out vec4 outColor;
+        void main() {
+          vec2 p = gl_PointCoord * 2.0 - 1.0;
+          float d = dot(p, p);
+          float core = exp(-d * 5.8);
+          float halo = exp(-d * 1.45) * 0.32;
+          float head = mix(0.62, 1.1, vAge);
+          vec3 phosphor = vec3(0.16, 1.0, 0.48) * (core + halo) * uIntensity * head;
+          outColor = vec4(phosphor, core + halo);
+        }`;
+
+      const fragPresent = `#version 300 es
+        precision highp float;
+        uniform sampler2D uTex;
+        uniform vec2 uResolution;
+        in vec2 vUv;
+        out vec4 outColor;
+
+        float lineGrid(float p, float scale, float width) {
+          float g = abs(fract(p * scale - 0.5) - 0.5) / fwidth(p * scale);
+          return 1.0 - smoothstep(width, width + 1.0, g);
+        }
+
+        void main() {
+          vec2 px = 1.0 / uResolution;
+          vec3 base = texture(uTex, vUv).rgb;
+          vec3 glow = base;
+          glow += texture(uTex, vUv + vec2(px.x * 1.5, 0.0)).rgb * 0.5;
+          glow += texture(uTex, vUv - vec2(px.x * 1.5, 0.0)).rgb * 0.5;
+          glow += texture(uTex, vUv + vec2(0.0, px.y * 1.5)).rgb * 0.5;
+          glow += texture(uTex, vUv - vec2(0.0, px.y * 1.5)).rgb * 0.5;
+          glow += texture(uTex, vUv + vec2(px.x * 4.0, px.y * 4.0)).rgb * 0.22;
+          glow += texture(uTex, vUv - vec2(px.x * 4.0, px.y * 4.0)).rgb * 0.22;
+
+          vec2 scope = vUv * 2.0 - 1.0;
+          float roundMask = 1.0 - smoothstep(0.92, 1.24, length(scope * vec2(1.0, 0.92)));
+          float gridMinor = max(lineGrid(scope.x, 10.0, 0.42), lineGrid(scope.y, 10.0, 0.42));
+          float gridMajor = max(lineGrid(scope.x, 2.0, 0.78), lineGrid(scope.y, 2.0, 0.78));
+          float center = max(1.0 - smoothstep(0.0, 0.008, abs(scope.x)), 1.0 - smoothstep(0.0, 0.008, abs(scope.y)));
+          float vignette = 1.0 - smoothstep(0.22, 1.18, length(scope * vec2(1.0, 0.86)));
+          float scan = 0.94 + 0.06 * sin(gl_FragCoord.y * 2.35);
+
+          vec3 bg = vec3(0.006, 0.014, 0.012);
+          vec3 grid = vec3(0.03, 0.26, 0.15) * gridMinor + vec3(0.05, 0.5, 0.26) * gridMajor + vec3(0.12, 0.72, 0.32) * center * 0.42;
+          vec3 phosphor = vec3(0.5, 1.0, 0.64) * base * 1.55 + vec3(0.18, 0.95, 0.42) * glow * 0.45;
+          vec3 color = bg + grid * roundMask * 0.45 + phosphor * roundMask;
+          color *= vignette * scan;
+          color += vec3(0.01, 0.035, 0.025) * (1.0 - roundMask);
+          outColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+        }`;
+
+      function compile(type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          throw new Error(gl.getShaderInfoLog(shader) || "Shader compilation failed");
+        }
+        return shader;
+      }
+
+      function program(vs, fs) {
+        const p = gl.createProgram();
+        gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
+        gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(p);
+        if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+          throw new Error(gl.getProgramInfoLog(p) || "Program link failed");
+        }
+        return p;
+      }
+
+      const fadeProgram = program(vertFull, fragFade);
+      const traceProgram = program(vertTrace, fragTrace);
+      const presentProgram = program(vertFull, fragPresent);
+      const vao = gl.createVertexArray();
+      gl.bindVertexArray(vao);
+
+      const loc = {
+        fade: {
+          prev: gl.getUniformLocation(fadeProgram, "uPrev"),
+          persistence: gl.getUniformLocation(fadeProgram, "uPersistence")
+        },
+        trace: {
+          time: gl.getUniformLocation(traceProgram, "uTime"),
+          traceWindow: gl.getUniformLocation(traceProgram, "uTraceWindow"),
+          sampleCount: gl.getUniformLocation(traceProgram, "uSampleCount"),
+          pointSize: gl.getUniformLocation(traceProgram, "uPointSize"),
+          oscX: gl.getUniformLocation(traceProgram, "uOscX"),
+          oscY: gl.getUniformLocation(traceProgram, "uOscY"),
+          waveX: gl.getUniformLocation(traceProgram, "uWaveX"),
+          waveY: gl.getUniformLocation(traceProgram, "uWaveY"),
+          intensity: gl.getUniformLocation(traceProgram, "uIntensity")
+        },
+        present: {
+          tex: gl.getUniformLocation(presentProgram, "uTex"),
+          resolution: gl.getUniformLocation(presentProgram, "uResolution")
+        }
+      };
+
+      const buffers = [
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() },
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() }
+      ];
+      let readIndex = 0;
+      let width = 0;
+      let height = 0;
+      let simTime = 0;
+      let lastNow = performance.now();
+      let fpsLast = lastNow;
+      let fpsFrames = 0;
+
+      gl.disable(gl.DEPTH_TEST);
+      gl.disable(gl.CULL_FACE);
+
+      function configureTexture(target) {
+        gl.bindTexture(gl.TEXTURE_2D, target.tex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.tex, 0);
+      }
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const nextWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+        const nextHeight = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+        if (nextWidth === width && nextHeight === height) {
+          return;
+        }
+        width = nextWidth;
+        height = nextHeight;
+        canvas.width = width;
+        canvas.height = height;
+        configureTexture(buffers[0]);
+        configureTexture(buffers[1]);
+        for (const target of buffers) {
+          gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
+          gl.clearColor(0, 0, 0, 1);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+        }
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, width, height);
+      }
+
+      function bindNumberControl(input, out, getter, setter, format) {
+        const update = () => {
+          const value = Number(input.value);
+          setter(value);
+          out.textContent = format(value);
+        };
+        input.addEventListener("input", update, { passive: true });
+        update();
+      }
+
+      function wireOsc(section, osc) {
+        const model = state[osc];
+        const wave = section.querySelector("[data-param='wave']");
+        wave.value = String(model.wave);
+        wave.addEventListener("input", () => {
+          model.wave = Number(wave.value);
+        });
+
+        for (const param of ["freq", "amp", "phase", "offset"]) {
+          const input = section.querySelector(`[data-param='${param}']`);
+          const out = section.querySelector(`[data-out='${param}']`);
+          input.value = String(model[param]);
+          bindNumberControl(input, out, () => model[param], value => { model[param] = value; }, value => {
+            if (param === "freq") return `${value.toFixed(1)} Hz`;
+            if (param === "phase") return `${value.toFixed(1)} deg`;
+            return value.toFixed(3);
+          });
+        }
+      }
+
+      function wireDisplay() {
+        bindNumberControl(document.getElementById("persistence"), document.querySelector("[data-out='persistence']"), () => state.persistence, v => { state.persistence = v; }, v => v.toFixed(3));
+        bindNumberControl(document.getElementById("intensity"), document.querySelector("[data-out='intensity']"), () => state.intensity, v => { state.intensity = v; }, v => v.toFixed(3));
+        bindNumberControl(document.getElementById("focus"), document.querySelector("[data-out='focus']"), () => state.focus, v => { state.focus = v; }, v => `${v.toFixed(1)} px`);
+        bindNumberControl(document.getElementById("window"), document.querySelector("[data-out='window']"), () => state.window, v => { state.window = v; }, v => `${(v * 1000).toFixed(1)} ms`);
+        bindNumberControl(document.getElementById("samples"), document.querySelector("[data-out='samples']"), () => state.samples, v => { state.samples = v | 0; }, v => String(v | 0));
+      }
+
+      function setPreset(preset) {
+        if (preset === "classic") {
+          Object.assign(state.x, { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0 });
+          Object.assign(state.y, { wave: 0, freq: 165, amp: 0.74, phase: 90, offset: 0 });
+        } else if (preset === "rosette") {
+          Object.assign(state.x, { wave: 0, freq: 97.5, amp: 0.78, phase: 0, offset: 0 });
+          Object.assign(state.y, { wave: 0, freq: 162.5, amp: 0.78, phase: 37, offset: 0 });
+        } else {
+          Object.assign(state.x, { wave: 2, freq: 75, amp: 0.68, phase: 0, offset: 0 });
+          Object.assign(state.y, { wave: 1, freq: 150, amp: 0.68, phase: 90, offset: 0 });
+        }
+        syncControlsFromState();
+      }
+
+      function syncControlsFromState() {
+        for (const osc of ["x", "y"]) {
+          const section = document.querySelector(`[data-osc='${osc}']`);
+          const model = state[osc];
+          section.querySelector("[data-param='wave']").value = String(model.wave);
+          for (const param of ["freq", "amp", "phase", "offset"]) {
+            const input = section.querySelector(`[data-param='${param}']`);
+            input.value = String(model[param]);
+            input.dispatchEvent(new Event("input"));
+          }
+        }
+      }
+
+      wireOsc(document.querySelector("[data-osc='x']"), "x");
+      wireOsc(document.querySelector("[data-osc='y']"), "y");
+      wireDisplay();
+      document.getElementById("presetClassic").addEventListener("click", () => setPreset("classic"));
+      document.getElementById("presetRosette").addEventListener("click", () => setPreset("rosette"));
+      document.getElementById("presetSquare").addEventListener("click", () => setPreset("square"));
+      document.getElementById("toggleFreeze").addEventListener("click", event => {
+        state.frozen = !state.frozen;
+        event.currentTarget.textContent = state.frozen ? "Resume" : "Freeze";
+      });
+
+      const fpsText = document.getElementById("fps");
+      const sampleText = document.getElementById("sampleStat");
+      const traceReadout = document.getElementById("traceReadout");
+      const perfReadout = document.getElementById("perfReadout");
+
+      function render(now) {
+        resize();
+        const dt = Math.min((now - lastNow) * 0.001, 0.05);
+        lastNow = now;
+        if (!state.frozen) {
+          simTime += dt;
+        }
+
+        const read = buffers[readIndex];
+        const write = buffers[1 - readIndex];
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, write.fb);
+        gl.viewport(0, 0, width, height);
+        gl.disable(gl.BLEND);
+        gl.useProgram(fadeProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, read.tex);
+        gl.uniform1i(loc.fade.prev, 0);
+        gl.uniform1f(loc.fade.persistence, state.frozen ? 1.0 : state.persistence);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+        gl.useProgram(traceProgram);
+        gl.uniform1f(loc.trace.time, simTime);
+        gl.uniform1f(loc.trace.traceWindow, state.window);
+        gl.uniform1f(loc.trace.sampleCount, state.samples);
+        gl.uniform1f(loc.trace.pointSize, state.focus * Math.min(window.devicePixelRatio || 1, 2));
+        gl.uniform4f(loc.trace.oscX, state.x.freq, state.x.amp, state.x.phase, state.x.offset);
+        gl.uniform4f(loc.trace.oscY, state.y.freq, state.y.amp, state.y.phase, state.y.offset);
+        gl.uniform1i(loc.trace.waveX, state.x.wave);
+        gl.uniform1i(loc.trace.waveY, state.y.wave);
+        gl.uniform1f(loc.trace.intensity, state.intensity);
+        gl.drawArrays(gl.POINTS, 0, state.samples);
+        gl.disable(gl.BLEND);
+
+        readIndex = 1 - readIndex;
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, width, height);
+        gl.useProgram(presentProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, write.tex);
+        gl.uniform1i(loc.present.tex, 0);
+        gl.uniform2f(loc.present.resolution, width, height);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        fpsFrames++;
+        if (now - fpsLast > 350) {
+          const fps = Math.round((fpsFrames * 1000) / (now - fpsLast));
+          fpsFrames = 0;
+          fpsLast = now;
+          fpsText.textContent = String(fps);
+          sampleText.textContent = String(state.samples);
+          traceReadout.textContent = `X ${state.x.freq.toFixed(2)} Hz  /  Y ${state.y.freq.toFixed(2)} Hz`;
+          perfReadout.textContent = `${fps} fps  /  ${state.samples} samples`;
+        }
+
+        requestAnimationFrame(render);
+      }
+
+      window.addEventListener("resize", resize, { passive: true });
+      requestAnimationFrame(render);
+    })();
+  </script>
+</body>
+</html>
