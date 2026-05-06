@@ -142,7 +142,8 @@
       font-weight: 600;
     }
 
-    label {
+    label,
+    .controlLabel {
       display: grid;
       gap: 6px;
       margin: 12px 0;
@@ -171,6 +172,7 @@
       font: inherit;
     }
 
+    input[type="number"],
     select,
     button {
       width: 100%;
@@ -179,6 +181,11 @@
       background: var(--control);
       color: var(--text);
       min-height: 34px;
+    }
+
+    input[type="number"] {
+      padding: 0 9px;
+      font-variant-numeric: tabular-nums;
     }
 
     button {
@@ -200,6 +207,49 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+    }
+
+    .compactGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .compactGrid label {
+      margin: 0;
+    }
+
+    .compactGrid .controlLabel {
+      margin: 0;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding: 3px;
+      border: 1px solid rgba(139, 255, 195, 0.18);
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.22);
+    }
+
+    .segmented button {
+      min-height: 28px;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .segmented button[aria-pressed="true"] {
+      background: var(--control);
+      color: var(--text);
+      border-color: rgba(98, 255, 159, 0.42);
+    }
+
+    .freqNumber {
+      margin-top: 4px;
     }
 
     .statGrid {
@@ -257,6 +307,31 @@
     <h1>Waveform Visualizer</h1>
     <p class="subhead">Two oscillators drive X and Y directly. Rendering uses WebGL2 persistence buffers and shader-generated phosphor traces.</p>
 
+    <section class="section">
+      <h2>Tuning <span>note / interval</span></h2>
+      <div class="compactGrid">
+        <label>Mode
+          <select id="frequencyMode">
+            <option value="hz">Hz</option>
+            <option value="note">Note</option>
+            <option value="interval">Interval</option>
+          </select>
+        </label>
+        <label>Interval
+          <select id="globalInterval"></select>
+        </label>
+        <div class="controlLabel">Temperament
+          <div class="segmented" id="temperament" role="group" aria-label="Temperament">
+            <button type="button" data-temperament="equal" aria-pressed="true">Equal</button>
+            <button type="button" data-temperament="just" aria-pressed="false">Just</button>
+          </div>
+        </div>
+        <label>Reference
+          <input id="referenceFreq" type="number" min="0.1" max="520" step="0.1" value="110">
+        </label>
+      </div>
+    </section>
+
     <section class="section" data-osc="x">
       <h2>Oscillator X <span>horizontal</span></h2>
       <label>Waveform
@@ -269,8 +344,14 @@
       </label>
       <label>
         <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
+        <input class="freqNumber" type="number" min="0.1" max="520" step="0.1" value="110" data-param="freqNumber" aria-label="Oscillator X frequency in Hz">
         <input type="range" min="0.1" max="520" step="0.1" value="110" data-param="freq">
       </label>
+      <div class="compactGrid">
+        <label>Note
+          <select data-param="note"></select>
+        </label>
+      </div>
       <label>
         <span class="row"><span>Amplitude</span><output data-out="amp"></output></span>
         <input type="range" min="0" max="1" step="0.001" value="0.74" data-param="amp">
@@ -297,8 +378,14 @@
       </label>
       <label>
         <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
+        <input class="freqNumber" type="number" min="0.1" max="520" step="0.1" value="165" data-param="freqNumber" aria-label="Oscillator Y frequency in Hz">
         <input type="range" min="0.1" max="520" step="0.1" value="165" data-param="freq">
       </label>
+      <div class="compactGrid">
+        <label>Note
+          <select data-param="note"></select>
+        </label>
+      </div>
       <label>
         <span class="row"><span>Amplitude</span><output data-out="amp"></output></span>
         <input type="range" min="0" max="1" step="0.001" value="0.74" data-param="amp">
@@ -357,6 +444,8 @@
       "use strict";
 
       const TAU = Math.PI * 2;
+      const FREQ_MIN = 0.1;
+      const FREQ_MAX = 520;
       const canvas = document.getElementById("scope");
       const gl = canvas.getContext("webgl2", {
         antialias: false,
@@ -373,8 +462,9 @@
       }
 
       const state = {
-        x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0 },
-        y: { wave: 0, freq: 165, amp: 0.74, phase: 90, offset: 0 },
+        x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0, note: "A2" },
+        y: { wave: 0, freq: 165, amp: 0.74, phase: 90, offset: 0, note: "E3" },
+        tuning: { freqMode: "hz", interval: "perfectFifth", temperament: "equal", referenceFreq: 110 },
         persistence: 0.972,
         intensity: 0.32,
         focus: 2.4,
@@ -382,6 +472,40 @@
         samples: 8192,
         frozen: false
       };
+
+      const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+      const JUST_NOTE_RATIOS = [1, 16 / 15, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 45 / 32, 3 / 2, 8 / 5, 5 / 3, 9 / 5, 15 / 8];
+      const C4_EQUAL_FREQ = 440 * Math.pow(2, -9 / 12);
+      const INTERVALS = [
+        { value: "unison", label: "Unison", semitones: 0, just: 1 },
+        { value: "minorSecond", label: "Minor second", semitones: 1, just: 16 / 15 },
+        { value: "majorSecond", label: "Major second", semitones: 2, just: 9 / 8 },
+        { value: "minorThird", label: "Minor third", semitones: 3, just: 6 / 5 },
+        { value: "majorThird", label: "Major third", semitones: 4, just: 5 / 4 },
+        { value: "perfectFourth", label: "Perfect fourth", semitones: 5, just: 4 / 3 },
+        { value: "tritone", label: "Tritone", semitones: 6, just: 45 / 32 },
+        { value: "perfectFifth", label: "Perfect fifth", semitones: 7, just: 3 / 2 },
+        { value: "minorSixth", label: "Minor sixth", semitones: 8, just: 8 / 5 },
+        { value: "majorSixth", label: "Major sixth", semitones: 9, just: 5 / 3 },
+        { value: "minorSeventh", label: "Minor seventh", semitones: 10, just: 9 / 5 },
+        { value: "majorSeventh", label: "Major seventh", semitones: 11, just: 15 / 8 },
+        { value: "octave", label: "Octave", semitones: 12, just: 2 },
+        { value: "minorNinth", label: "Minor ninth", semitones: 13, just: 32 / 15 },
+        { value: "majorNinth", label: "Major ninth", semitones: 14, just: 9 / 4 },
+        { value: "minorTenth", label: "Minor tenth", semitones: 15, just: 12 / 5 },
+        { value: "majorTenth", label: "Major tenth", semitones: 16, just: 5 / 2 },
+        { value: "perfectEleventh", label: "Perfect eleventh", semitones: 17, just: 8 / 3 },
+        { value: "compoundTritone", label: "Tritone + octave", semitones: 18, just: 45 / 16 },
+        { value: "perfectTwelfth", label: "Perfect twelfth", semitones: 19, just: 3 },
+        { value: "minorThirteenth", label: "Minor thirteenth", semitones: 20, just: 16 / 5 },
+        { value: "majorThirteenth", label: "Major thirteenth", semitones: 21, just: 10 / 3 },
+        { value: "minorFourteenth", label: "Minor fourteenth", semitones: 22, just: 18 / 5 },
+        { value: "majorFourteenth", label: "Major fourteenth", semitones: 23, just: 15 / 4 },
+        { value: "twoOctaves", label: "Two octaves", semitones: 24, just: 4 }
+      ];
+      const INTERVAL_BY_VALUE = new Map(INTERVALS.map(interval => [interval.value, interval]));
+      const MIN_NOTE_MIDI = 12;
+      const MAX_NOTE_MIDI = 119;
 
       const vertFull = `#version 300 es
         const vec2 POS[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
@@ -595,6 +719,146 @@
         gl.viewport(0, 0, width, height);
       }
 
+      const oscControls = { x: null, y: null };
+
+      function clampFrequency(value, fallback) {
+        if (!Number.isFinite(value)) {
+          return fallback;
+        }
+        return Math.min(FREQ_MAX, Math.max(FREQ_MIN, value));
+      }
+
+      function formatParam(param, value) {
+        if (param === "freq") return `${value.toFixed(1)} Hz`;
+        if (param === "phase") return `${value.toFixed(1)} deg`;
+        return value.toFixed(3);
+      }
+
+      function noteFrequency(note) {
+        const midi = noteToMidi(note);
+        if (midi < 0) {
+          return state.tuning.referenceFreq;
+        }
+        const noteIndex = midi % 12;
+        const octave = Math.floor(midi / 12) - 1;
+        if (state.tuning.temperament === "just") {
+          return C4_EQUAL_FREQ * Math.pow(2, octave - 4) * JUST_NOTE_RATIOS[noteIndex];
+        }
+        return 440 * Math.pow(2, (midi - 69) / 12);
+      }
+
+      function noteToMidi(note) {
+        const octave = Number(note.slice(-1));
+        const name = note.slice(0, -1);
+        const noteIndex = NOTE_NAMES.indexOf(name);
+        if (noteIndex < 0 || !Number.isFinite(octave)) {
+          return -1;
+        }
+        return (octave + 1) * 12 + noteIndex;
+      }
+
+      function intervalRatio(value) {
+        const interval = INTERVAL_BY_VALUE.get(value) || INTERVALS[0];
+        return state.tuning.temperament === "just" ? interval.just : Math.pow(2, interval.semitones / 12);
+      }
+
+      function midiToNote(midi) {
+        const clamped = Math.min(MAX_NOTE_MIDI, Math.max(MIN_NOTE_MIDI, midi));
+        return `${NOTE_NAMES[clamped % 12]}${Math.floor(clamped / 12) - 1}`;
+      }
+
+      function populateMusicSelects(section) {
+        const noteSelect = section.querySelector("[data-param='note']");
+        const noteOptions = document.createDocumentFragment();
+        for (let octave = 0; octave <= 8; octave++) {
+          for (const note of NOTE_NAMES) {
+            const option = document.createElement("option");
+            option.value = `${note}${octave}`;
+            option.textContent = `${note}${octave}`;
+            noteOptions.appendChild(option);
+          }
+        }
+        noteSelect.appendChild(noteOptions);
+      }
+
+      function populateGlobalInterval() {
+        const intervalSelect = document.getElementById("globalInterval");
+        const intervalOptions = document.createDocumentFragment();
+        for (const interval of INTERVALS) {
+          const option = document.createElement("option");
+          option.value = interval.value;
+          option.textContent = interval.label;
+          intervalOptions.appendChild(option);
+        }
+        intervalSelect.appendChild(intervalOptions);
+        intervalSelect.value = state.tuning.interval;
+      }
+
+      function syncFrequencyControls(osc) {
+        const controls = oscControls[osc];
+        if (!controls) {
+          return;
+        }
+        const value = state[osc].freq;
+        controls.freqRange.value = String(value);
+        controls.freqNumber.value = value.toFixed(1);
+        controls.freqOut.textContent = formatParam("freq", value);
+      }
+
+      function syncModeControls(osc) {
+        const controls = oscControls[osc];
+        if (!controls) {
+          return;
+        }
+        const model = state[osc];
+        controls.note.value = model.note;
+        controls.note.disabled = state.tuning.freqMode === "hz";
+      }
+
+      function syncGlobalModeControls() {
+        const mode = document.getElementById("frequencyMode");
+        const interval = document.getElementById("globalInterval");
+        mode.value = state.tuning.freqMode;
+        interval.value = state.tuning.interval;
+        interval.disabled = state.tuning.freqMode !== "interval";
+        syncModeControls("x");
+        syncModeControls("y");
+      }
+
+      function setOscFrequency(osc, value) {
+        state[osc].freq = clampFrequency(value, state[osc].freq);
+        syncFrequencyControls(osc);
+      }
+
+      function applyNoteMode() {
+        setOscFrequency("x", noteFrequency(state.x.note));
+        setOscFrequency("y", noteFrequency(state.y.note));
+      }
+
+      function applyIntervalMode(anchor = "x") {
+        const interval = INTERVAL_BY_VALUE.get(state.tuning.interval) || INTERVALS[0];
+        if (anchor === "y") {
+          state.x.note = midiToNote(noteToMidi(state.y.note) - interval.semitones);
+        } else {
+          state.y.note = midiToNote(noteToMidi(state.x.note) + interval.semitones);
+        }
+        setOscFrequency("x", noteFrequency(state.x.note));
+        setOscFrequency("y", state.x.freq * intervalRatio(state.tuning.interval));
+        syncModeControls("x");
+        syncModeControls("y");
+      }
+
+      function applyGlobalFrequencyMode(anchor = "x") {
+        if (state.tuning.freqMode === "note") {
+          applyNoteMode();
+        } else if (state.tuning.freqMode === "interval") {
+          applyIntervalMode(anchor);
+        } else {
+          syncFrequencyControls("x");
+          syncFrequencyControls("y");
+        }
+      }
+
       function bindNumberControl(input, out, getter, setter, format) {
         const update = () => {
           const value = Number(input.value);
@@ -613,16 +877,58 @@
           model.wave = Number(wave.value);
         });
 
+        populateMusicSelects(section);
+        oscControls[osc] = {
+          freqRange: section.querySelector("[data-param='freq']"),
+          freqNumber: section.querySelector("[data-param='freqNumber']"),
+          freqOut: section.querySelector("[data-out='freq']"),
+          note: section.querySelector("[data-param='note']")
+        };
+
         for (const param of ["freq", "amp", "phase", "offset"]) {
           const input = section.querySelector(`[data-param='${param}']`);
           const out = section.querySelector(`[data-out='${param}']`);
           input.value = String(model[param]);
+          if (param === "freq") {
+            continue;
+          }
           bindNumberControl(input, out, () => model[param], value => { model[param] = value; }, value => {
-            if (param === "freq") return `${value.toFixed(1)} Hz`;
-            if (param === "phase") return `${value.toFixed(1)} deg`;
-            return value.toFixed(3);
+            return formatParam(param, value);
           });
         }
+
+        const controls = oscControls[osc];
+        controls.freqRange.value = String(model.freq);
+        controls.freqNumber.value = String(model.freq);
+        controls.freqRange.addEventListener("input", () => {
+          state.tuning.freqMode = "hz";
+          syncGlobalModeControls();
+          setOscFrequency(osc, controls.freqRange.valueAsNumber);
+        }, { passive: true });
+        controls.freqNumber.addEventListener("input", () => {
+          const value = controls.freqNumber.valueAsNumber;
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          state.tuning.freqMode = "hz";
+          syncGlobalModeControls();
+          setOscFrequency(osc, value);
+        });
+        controls.freqNumber.addEventListener("change", () => {
+          state.tuning.freqMode = "hz";
+          syncGlobalModeControls();
+          setOscFrequency(osc, controls.freqNumber.valueAsNumber);
+        });
+        controls.note.addEventListener("input", () => {
+          model.note = controls.note.value;
+          if (state.tuning.freqMode === "note") {
+            setOscFrequency(osc, noteFrequency(model.note));
+          } else if (state.tuning.freqMode === "interval") {
+            applyIntervalMode(osc);
+          }
+        });
+        syncModeControls(osc);
+        syncFrequencyControls(osc);
       }
 
       function wireDisplay() {
@@ -631,6 +937,56 @@
         bindNumberControl(document.getElementById("focus"), document.querySelector("[data-out='focus']"), () => state.focus, v => { state.focus = v; }, v => `${v.toFixed(1)} px`);
         bindNumberControl(document.getElementById("window"), document.querySelector("[data-out='window']"), () => state.window, v => { state.window = v; }, v => `${(v * 1000).toFixed(1)} ms`);
         bindNumberControl(document.getElementById("samples"), document.querySelector("[data-out='samples']"), () => state.samples, v => { state.samples = v | 0; }, v => String(v | 0));
+      }
+
+      function wireTuning() {
+        const mode = document.getElementById("frequencyMode");
+        const interval = document.getElementById("globalInterval");
+        const temperamentButtons = document.querySelectorAll("[data-temperament]");
+        const referenceFreq = document.getElementById("referenceFreq");
+        populateGlobalInterval();
+        mode.value = state.tuning.freqMode;
+        interval.value = state.tuning.interval;
+        referenceFreq.value = String(state.tuning.referenceFreq);
+        mode.addEventListener("input", () => {
+          state.tuning.freqMode = mode.value;
+          syncGlobalModeControls();
+          applyGlobalFrequencyMode();
+        });
+        interval.addEventListener("input", () => {
+          state.tuning.interval = interval.value;
+          syncGlobalModeControls();
+          if (state.tuning.freqMode === "interval") {
+            applyIntervalMode();
+          }
+        });
+        const syncTemperamentButtons = () => {
+          for (const button of temperamentButtons) {
+            button.setAttribute("aria-pressed", button.dataset.temperament === state.tuning.temperament ? "true" : "false");
+          }
+        };
+        for (const button of temperamentButtons) {
+          button.addEventListener("click", () => {
+            state.tuning.temperament = button.dataset.temperament;
+            syncTemperamentButtons();
+            applyGlobalFrequencyMode();
+          });
+        }
+        syncTemperamentButtons();
+        syncGlobalModeControls();
+        referenceFreq.addEventListener("input", () => {
+          const value = referenceFreq.valueAsNumber;
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          state.tuning.referenceFreq = clampFrequency(value, state.tuning.referenceFreq);
+          applyGlobalFrequencyMode();
+        });
+        referenceFreq.addEventListener("change", () => {
+          state.tuning.referenceFreq = clampFrequency(referenceFreq.valueAsNumber, state.tuning.referenceFreq);
+          referenceFreq.value = state.tuning.referenceFreq.toFixed(1);
+          applyGlobalFrequencyMode();
+        });
       }
 
       function setPreset(preset) {
@@ -644,6 +1000,7 @@
           Object.assign(state.x, { wave: 2, freq: 75, amp: 0.68, phase: 0, offset: 0 });
           Object.assign(state.y, { wave: 1, freq: 150, amp: 0.68, phase: 90, offset: 0 });
         }
+        state.tuning.freqMode = "hz";
         syncControlsFromState();
       }
 
@@ -655,13 +1012,20 @@
           for (const param of ["freq", "amp", "phase", "offset"]) {
             const input = section.querySelector(`[data-param='${param}']`);
             input.value = String(model[param]);
-            input.dispatchEvent(new Event("input"));
+            if (param === "freq") {
+              syncModeControls(osc);
+              syncFrequencyControls(osc);
+            } else {
+              section.querySelector(`[data-out='${param}']`).textContent = formatParam(param, model[param]);
+            }
           }
         }
+        syncGlobalModeControls();
       }
 
       wireOsc(document.querySelector("[data-osc='x']"), "x");
       wireOsc(document.querySelector("[data-osc='y']"), "y");
+      wireTuning();
       wireDisplay();
       document.getElementById("presetClassic").addEventListener("click", () => setPreset("classic"));
       document.getElementById("presetRosette").addEventListener("click", () => setPreset("rosette"));

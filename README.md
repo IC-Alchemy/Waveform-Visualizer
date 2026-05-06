@@ -19,5 +19,8 @@ Then open `http://127.0.0.1:5177/`.
 ## Controls
 
 - Oscillator X and Y: waveform, frequency, amplitude, phase, and offset.
+- The top mode selector switches both oscillators between direct Hz, note selection, and interval mode.
+- Note mode uses per-oscillator C0-B8 note selectors; interval mode uses one shared interval control to relate the two oscillator notes.
+- Tuning supports equal temperament and just intonation for note and interval calculations; direct Hz mode stays unquantized.
 - Display: persistence, trace intensity, focus, trace window, and samples per frame.
 - Presets: classic sine ratio, rosette, square XY, and freeze/resume.
