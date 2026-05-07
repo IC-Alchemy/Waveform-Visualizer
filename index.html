@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Waveform Visualizer</title>
   <style>
     :root {
@@ -15,6 +15,8 @@
       --accent: #62ff9f;
       --amber: #ffc766;
       --control: #172326;
+      --control-height: 38px;
+      --touch-control-height: 46px;
     }
 
     * {
@@ -25,17 +27,21 @@
     body {
       width: 100%;
       height: 100%;
+      min-height: 100%;
       margin: 0;
       overflow: hidden;
       background: #050808;
       color: var(--text);
       font-family: "Segoe UI", system-ui, sans-serif;
       letter-spacing: 0;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: rgba(98, 255, 159, 0.16);
     }
 
     body {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 360px;
+      height: 100dvh;
     }
 
     #scopeStage {
@@ -45,6 +51,7 @@
       background:
         radial-gradient(circle at 50% 50%, rgba(56, 255, 145, 0.08), transparent 42%),
         linear-gradient(145deg, #081011 0%, #020404 100%);
+      overflow: hidden;
     }
 
     #scope {
@@ -55,6 +62,7 @@
       height: 100%;
       cursor: crosshair;
       touch-action: none;
+      user-select: none;
     }
 
     .scope-label {
@@ -96,10 +104,13 @@
       min-width: 0;
       height: 100vh;
       overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
       border-left: 1px solid rgba(111, 255, 178, 0.15);
       background: linear-gradient(180deg, var(--panel), var(--panel-2));
       box-shadow: -18px 0 48px rgba(0, 0, 0, 0.42);
       padding: 18px;
+      -webkit-overflow-scrolling: touch;
     }
 
     h1 {
@@ -307,12 +318,16 @@
       border-radius: 6px;
       background: var(--control);
       color: var(--text);
-      min-height: 34px;
+      min-height: var(--control-height);
     }
 
     input[type="number"] {
       padding: 0 9px;
       font-variant-numeric: tabular-nums;
+    }
+
+    select {
+      padding: 0 32px 0 10px;
     }
 
     input[type="color"] {
@@ -323,16 +338,70 @@
     button {
       cursor: pointer;
       font-weight: 700;
+      touch-action: manipulation;
     }
 
-    button:hover {
-      border-color: rgba(98, 255, 159, 0.52);
-      color: white;
+    button:not(.helpButton) {
+      padding: 0 12px;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid rgba(98, 255, 159, 0.72);
+      outline-offset: 2px;
+    }
+
+    @media (hover: hover) {
+      button:hover {
+        border-color: rgba(98, 255, 159, 0.52);
+        color: white;
+      }
     }
 
     input[type="range"] {
+      appearance: none;
+      -webkit-appearance: none;
       width: 100%;
+      height: 32px;
+      border: 0;
+      background: transparent;
       accent-color: var(--accent);
+      touch-action: pan-y;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      border: 1px solid rgba(139, 255, 195, 0.16);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.34);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      margin-top: -10px;
+      border: 2px solid rgba(7, 16, 17, 0.96);
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 1px rgba(98, 255, 159, 0.52), 0 0 18px rgba(98, 255, 159, 0.24);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 6px;
+      border: 1px solid rgba(139, 255, 195, 0.16);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.34);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border: 2px solid rgba(7, 16, 17, 0.96);
+      border-radius: 50%;
+      background: var(--accent);
     }
 
     .buttonGrid {
@@ -419,20 +488,112 @@
     }
 
     @media (max-width: 860px) {
+      html {
+        height: auto;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
       body {
-        grid-template-columns: 1fr;
-        grid-template-rows: minmax(54vh, 1fr) auto;
-        overflow: auto;
+        display: block;
+        height: auto;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: visible;
       }
 
       #scopeStage {
-        min-height: 54vh;
+        position: relative;
+        z-index: 2;
+        height: clamp(300px, 48dvh, 520px);
+        min-height: 300px;
+        border-bottom: 1px solid rgba(111, 255, 178, 0.15);
       }
 
       aside {
+        position: relative;
+        z-index: 3;
         height: auto;
+        overflow: visible;
         border-left: 0;
-        border-top: 1px solid rgba(111, 255, 178, 0.15);
+        border-top: 0;
+        box-shadow: 0 -16px 42px rgba(0, 0, 0, 0.38);
+        padding: 18px max(16px, env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      }
+
+      h1 {
+        font-size: 19px;
+      }
+
+      .subhead {
+        margin-bottom: 14px;
+      }
+
+      .section {
+        padding: 14px 0;
+      }
+
+      label,
+      .controlLabel {
+        margin: 14px 0;
+        font-size: 13px;
+      }
+
+      input[type="number"],
+      input[type="color"],
+      select,
+      button {
+        min-height: var(--touch-control-height);
+        font-size: 16px;
+      }
+
+      .segmented button {
+        min-height: 38px;
+        font-size: 13px;
+      }
+
+      .helpButton {
+        width: 28px;
+        height: 28px;
+        min-height: 28px;
+        font-size: 12px;
+      }
+
+      .tipBubble {
+        width: min(320px, calc(100vw - 28px));
+        font-size: 13px;
+      }
+
+      .readout {
+        right: 14px;
+        bottom: 12px;
+        min-width: 0;
+        font-size: 11px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      #scopeStage {
+        height: clamp(280px, 44dvh, 440px);
+        min-height: 280px;
+      }
+
+      .scope-label {
+        left: 14px;
+        top: 12px;
+        gap: 8px;
+        font-size: 11px;
+      }
+
+      .compactGrid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .statGrid,
+      .buttonGrid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -471,7 +632,7 @@
           </div>
         </div>
         <label data-help-key="referenceFreq">Reference
-          <input id="referenceFreq" type="number" min="0.1" max="520" step="0.01" value="110">
+          <input id="referenceFreq" type="number" inputmode="decimal" enterkeyhint="done" min="0.1" max="520" step="0.01" value="110">
         </label>
       </div>
     </section>
@@ -488,7 +649,7 @@
       </label>
       <label data-help-key="freqX">
         <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
-        <input class="freqNumber" type="number" min="0.1" max="520" step="0.01" value="110" data-param="freqNumber" aria-label="Oscillator X frequency in Hz">
+        <input class="freqNumber" type="number" inputmode="decimal" enterkeyhint="done" min="0.1" max="520" step="0.01" value="110" data-param="freqNumber" aria-label="Oscillator X frequency in Hz">
         <input type="range" min="0.1" max="520" step="0.01" value="110" data-param="freq">
       </label>
       <div class="compactGrid">
@@ -522,7 +683,7 @@
       </label>
       <label data-help-key="freqY">
         <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
-        <input class="freqNumber" type="number" min="0.1" max="520" step="0.01" value="165" data-param="freqNumber" aria-label="Oscillator Y frequency in Hz">
+        <input class="freqNumber" type="number" inputmode="decimal" enterkeyhint="done" min="0.1" max="520" step="0.01" value="165" data-param="freqNumber" aria-label="Oscillator Y frequency in Hz">
         <input type="range" min="0.1" max="520" step="0.01" value="165" data-param="freq">
       </label>
       <div class="compactGrid">
@@ -627,6 +788,7 @@
       const FREQ_MIN = 0.1;
       const FREQ_MAX = 520;
       const canvas = document.getElementById("scope");
+      const compactRenderQuery = window.matchMedia("(pointer: coarse), (max-width: 860px)");
       const gl = canvas.getContext("webgl2", {
         antialias: false,
         alpha: false,
@@ -1062,6 +1224,10 @@
       let fpsLast = lastNow;
       let fpsFrames = 0;
 
+      function renderPixelRatio() {
+        return Math.min(window.devicePixelRatio || 1, compactRenderQuery.matches ? 1.5 : 2);
+      }
+
       gl.disable(gl.DEPTH_TEST);
       gl.disable(gl.CULL_FACE);
 
@@ -1085,7 +1251,7 @@
       }
 
       function resize() {
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const dpr = renderPixelRatio();
         const nextWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr));
         const nextHeight = Math.max(1, Math.floor(canvas.clientHeight * dpr));
         if (nextWidth === width && nextHeight === height) {
@@ -1728,7 +1894,7 @@
           width,
           height,
           state.samples,
-          state.focus * Math.min(window.devicePixelRatio || 1, 2),
+          state.focus * renderPixelRatio(),
           simTime,
           state.frozen ? 1.0 : state.persistence
         );
@@ -1752,6 +1918,7 @@
       }
 
       window.addEventListener("resize", resize, { passive: true });
+      window.visualViewport?.addEventListener("resize", resize, { passive: true });
       savePng.addEventListener("click", saveExportImage);
       requestAnimationFrame(render);
     })();
