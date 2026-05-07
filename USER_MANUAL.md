@@ -47,6 +47,8 @@ The right panel contains all controls. On small screens, this panel moves below 
 
 The Tuning section decides how oscillator frequencies are chosen.
 
+The app opens in `Interval` mode with `Perfect fifth` selected.
+
 #### Mode
 
 `Mode` has three options.
@@ -58,6 +60,8 @@ The Tuning section decides how oscillator frequencies are chosen.
 `Interval` uses the X oscillator as the base note by default and sets the Y oscillator by a selected musical interval. For example, a perfect fifth makes Y run at a 3:2 ratio in just temperament or the equal-tempered equivalent in equal temperament.
 
 Changing a frequency number or slider automatically returns the app to `Hz` mode because you are directly editing frequency values.
+
+Changing either oscillator's note automatically switches the app to `Note` mode because you are directly choosing oscillator notes.
 
 #### Interval
 
@@ -112,9 +116,7 @@ The number field and slider control the same value. Higher frequencies produce m
 
 `Note` chooses a musical note from `C0` through `B8`. It is active in `Note` and `Interval` modes and disabled in direct `Hz` mode.
 
-In `Note` mode, changing X Note changes X Frequency.
-
-In `Interval` mode, changing X Note can move Y according to the selected interval.
+Changing X Note switches the app to `Note` mode and changes X Frequency.
 
 #### Amplitude
 
@@ -150,7 +152,7 @@ The X:Y frequency relationship is the main source of Lissajous pattern structure
 
 #### Note
 
-Chooses the Y musical note in `Note` mode. In `Interval` mode, Y is usually derived from X plus the selected interval.
+Changing Y Note switches the app to `Note` mode and changes Y Frequency. In `Interval` mode, Y is otherwise derived from X plus the selected interval.
 
 #### Amplitude
 
@@ -166,7 +168,7 @@ Moves the pattern up or down.
 
 ### Display
 
-The Display section controls rendering style and performance.
+The Display section controls rendering style and performance. It is collapsed by default.
 
 #### Persistence
 
@@ -208,11 +210,11 @@ Lower values make the beam edge harder. Higher values smooth the edge and widen 
 
 `Phosphor color` changes the trace and grid tint. Use green for a classic CRT look, amber for warmer monitor-like trails, or blue-white for a sharper electronic display style.
 
-#### Red, Green, and Blue Decay
+#### Decay
 
-`Red decay`, `Green decay`, and `Blue decay` control how long each color channel remains in the persistence buffer.
+`Decay` controls how long the persistence buffer remains after each frame.
 
-Lower values fade that color channel faster. Different channel values make trails shift color as they age, which can better approximate phosphor behavior than one global fade.
+Lower values fade old samples faster. Higher values keep longer phosphor trails.
 
 #### Bloom
 
@@ -232,13 +234,7 @@ The displayed value is shown in milliseconds.
 
 Higher values create smoother, denser traces but cost more GPU work. Lower values can improve performance on weaker devices but may make curves appear dotted or sparse.
 
-### Preset Buttons
-
-`Classic ratio` resets the app to a sine-based 110 Hz by 165 Hz relationship with a 90-degree Y phase. This is a 2:3 style Lissajous setup.
-
-`Rosette` selects sine waves with a 97.5 Hz by 162.5 Hz relationship and a 37-degree Y phase. It creates a more floral or rosette-like figure.
-
-`Square XY` uses a soft square X oscillator and triangle Y oscillator to create a boxier XY pattern.
+### Freeze
 
 `Freeze` pauses oscillator time and preserves the current image. The button changes to `Resume` while frozen. `Resume` continues animation from the paused state.
 
@@ -268,23 +264,24 @@ The Renderer section shows live performance.
 
 ### Make a Classic Lissajous Figure
 
-1. Click `Classic ratio`.
-2. Keep both waveforms as `Sine`.
-3. Try changing X Frequency to `100` and Y Frequency to `150`.
+1. Keep both waveforms as `Sine`.
+2. Set X Frequency to `100`.
+3. Set Y Frequency to `150`.
 4. Adjust Y Phase to rotate or reshape the figure.
 
 ### Explore Musical Intervals
 
-1. Set Mode to `Interval`.
+1. Use the startup `Interval` mode, or set Mode to `Interval`.
 2. Choose X Note, such as `A2`.
 3. Choose an Interval, such as `Perfect fifth` or `Octave`.
 4. Switch between `Equal` and `Just` temperament and compare how stable the pattern looks.
 
 ### Create a Boxy Pattern
 
-1. Click `Square XY`.
-2. Increase Trace Intensity if the trace is too dim.
-3. Lower Focus for thinner edges, raise Bloom for more glow, or raise Trace antialias for smoother edges.
+1. Set X Waveform to `Soft square`.
+2. Set Y Waveform to `Triangle`.
+3. Increase Trace Intensity if the trace is too dim.
+4. Lower Focus for thinner edges, raise Bloom for more glow, or raise Trace antialias for smoother edges.
 
 ## Troubleshooting
 
@@ -315,11 +312,11 @@ This is expected. Directly editing a frequency switches the app back to `Hz` mod
 ## Areas That Can Be Improved
 
 - Make `Reference` fully retune note and interval calculations instead of mostly storing the value.
-- Add saved user presets so favorite settings can be named and reloaded.
+- Add saved user settings so favorite configurations can be named and reloaded.
 - Add import/export for settings as JSON.
 - Add audio output or optional Web Audio monitoring so users can hear the oscillator relationship.
-- Add MIDI input for controlling frequency, note, amplitude, phase, or presets.
-- Add keyboard shortcuts for freeze/resume, preset switching, and fine parameter changes.
+- Add MIDI input for controlling frequency, note, amplitude, phase, or display settings.
+- Add keyboard shortcuts for freeze/resume and fine parameter changes.
 - Add a reset button for display-only settings.
 - Add mobile-specific control refinements for faster editing on touch screens.
 - Add accessibility improvements, including clearer focus states and richer screen-reader descriptions.

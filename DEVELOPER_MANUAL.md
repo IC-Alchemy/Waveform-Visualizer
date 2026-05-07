@@ -4,7 +4,7 @@
 
 Waveform Visualizer is a dependency-free single-page WebGL2 application. The full app lives in `index.html`, with project-level usage notes in `README.md`.
 
-The app renders an XY oscilloscope by evaluating two oscillators in a GPU vertex shader. Generated samples can be drawn as connected lines, point sprites, or both. A ping-pong framebuffer pair keeps previous samples alive, fades them over time with per-channel decay, runs a separate bloom pass, and presents the final image with grid, phosphor color, scanline, and vignette effects.
+The app renders an XY oscilloscope by evaluating two oscillators in a GPU vertex shader. Generated samples can be drawn as connected lines, point sprites, or both. A ping-pong framebuffer pair keeps previous samples alive, fades them over time with a shared decay value, runs a separate bloom pass, and presents the final image with grid, phosphor color, scanline, and vignette effects.
 
 ## Repository Layout
 
@@ -82,15 +82,15 @@ The main mutable model is the `state` object.
 ```js
 const state = {
   x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0, note: "A2" },
-  y: { wave: 0, freq: 165, amp: 0.74, phase: 90, offset: 0, note: "E3" },
-  tuning: { freqMode: "hz", interval: "perfectFifth", temperament: "equal", referenceFreq: 110 },
+  y: { wave: 0, freq: 164.81377845643496, amp: 0.74, phase: 90, offset: 0, note: "E3" },
+  tuning: { freqMode: "interval", interval: "perfectFifth", temperament: "equal", referenceFreq: 110 },
   persistence: 0.972,
   intensity: 0.32,
   focus: 2.4,
   traceAntialias: 0.54,
   traceStyle: "hybrid",
   phosphorColor: [0.36, 1.0, 0.62],
-  decay: { r: 0.92, g: 1.0, b: 0.96 },
+  decay: 0.96,
   bloom: 0.82,
   window: 0.032,
   samples: 8192,
@@ -143,7 +143,7 @@ const state = {
 
 `phosphorColor` is an RGB array sent to the trace and present shaders.
 
-`decay` stores RGB channel decay multipliers that are combined with global persistence in the fade pass.
+`decay` stores the shared decay multiplier that is combined with global persistence in the fade pass.
 
 `bloom` controls how strongly the blurred bloom texture is mixed into the final present pass.
 
@@ -201,7 +201,7 @@ It handles:
 - phase slider
 - offset slider
 
-Frequency edits switch the global mode back to `hz`. Note edits apply the active note or interval behavior.
+Frequency edits switch the global mode back to `hz`. Note edits switch the global mode to `note` and apply note-derived frequencies.
 
 `oscControls` stores important DOM references for X and Y.
 
@@ -209,25 +209,15 @@ Frequency edits switch the global mode back to `hz`. Note edits apply the active
 
 `wireTuning()` populates the interval select, wires the mode select, wires temperament buttons, and wires the reference frequency input.
 
+Temperament button clicks switch the app into `interval` mode before recalculating oscillator frequencies.
+
 `syncGlobalModeControls()` keeps mode, interval, and note-control disabled states aligned with `state.tuning`.
 
 ### Display Controls
 
-`wireDisplay()` binds the persistence, intensity, focus, trace antialias, RGB decay, bloom, trace window, samples-per-frame, export scale, and export sample controls. It also wires trace style and phosphor color inputs.
+`wireDisplay()` binds the persistence, intensity, focus, trace antialias, decay, bloom, trace window, samples-per-frame, export scale, and export sample controls. It also wires trace style and phosphor color inputs.
 
 Most display sliders use `bindNumberControl(input, out, getter, setter, format)` to update state and visible output text.
-
-### Presets
-
-`setPreset(preset)` currently supports:
-
-- `classic`
-- `rosette`
-- `square`
-
-Each preset mutates oscillator state and returns the tuning mode to `hz`.
-
-After mutation, `syncControlsFromState()` pushes state values back into the DOM.
 
 ### Freeze
 
@@ -287,7 +277,7 @@ Shader pair:
 - `vertFull`
 - `fragFade`
 
-`fragFade` samples the previous texture and multiplies it by a `vec3 uDecay` value. JavaScript builds that value from global persistence and the red, green, and blue decay controls.
+`fragFade` samples the previous texture and multiplies it by a `vec3 uDecay` value. JavaScript builds that value from global persistence and the shared decay control.
 
 When frozen, JavaScript sends `1.0` so old pixels remain.
 
@@ -407,15 +397,15 @@ There is no user-facing shader failure UI. During development, use the browser c
 After changing code, run through this checklist:
 
 1. Open the app in a WebGL2-capable browser.
-2. Confirm the default 110 Hz / 165 Hz pattern appears.
+2. Confirm the default Interval / Perfect fifth pattern appears.
 3. Confirm FPS and sample readouts update.
 4. Move X and Y frequency sliders and confirm the trace changes.
-5. Switch Mode to `Note` and confirm note selectors affect frequency.
+5. Change either oscillator Note and confirm the app switches to `Note` mode.
 6. Switch Mode to `Interval` and confirm interval changes affect Y relative to X.
 7. Switch between `Equal` and `Just` and confirm interval-derived frequencies change where expected.
 8. Test all four waveforms on both oscillators.
-9. Adjust Persistence, Trace intensity, Focus, Trace antialias, Trace style, Phosphor color, RGB decay, Bloom, Trace window, and Samples/frame.
-10. Test Classic ratio, Rosette, Square XY, Freeze, and Resume.
+9. Adjust Persistence, Trace intensity, Focus, Trace antialias, Trace style, Phosphor color, Decay, Bloom, Trace window, and Samples/frame.
+10. Test Freeze and Resume.
 11. Resize the browser and confirm the canvas remains sharp and fills the stage.
 12. Save a PNG at default export quality and confirm a non-empty download.
 13. Test a narrow viewport to confirm the control panel moves below the display.
@@ -427,7 +417,7 @@ This project currently has no automated tests. If it grows beyond a single-file 
 - pure function tests for note parsing, MIDI conversion, interval ratios, and frequency clamping
 - DOM tests for mode switching and disabled control states
 - shader compile smoke tests in a real WebGL browser
-- Playwright visual smoke tests for default render, presets, and responsive layout
+- Playwright visual smoke tests for default render, the collapsed Display section, and responsive layout
 - performance smoke tests for high sample counts
 - export smoke tests for framebuffer allocation and PNG download
 
@@ -448,7 +438,7 @@ When adding a control, make sure it has:
 - DOM markup
 - output formatting if needed
 - event listener
-- sync behavior when presets or modes change
+- sync behavior when modes change
 
 When adding shader uniforms, update:
 
@@ -467,20 +457,13 @@ When changing framebuffer formats, test on multiple browsers and GPUs. The curre
 3. Add a branch to `osc(float t, int wave)` in `vertTrace`.
 4. Test it on both X and Y.
 
-### Add a New Preset
-
-1. Add a button in the Display section.
-2. Add a branch in `setPreset(preset)`.
-3. Wire the button after `wireDisplay()`.
-4. Call `syncControlsFromState()` after state mutation.
-
 ### Add Settings Export
 
 1. Serialize the `state` object.
 2. Decide whether live-only fields such as `frozen` should be included.
 3. Download JSON through a Blob URL.
 4. Add import validation before applying external state.
-5. Call `syncControlsFromState()` and display sync functions after import.
+5. Call tuning, oscillator, and display sync functions after import.
 
 ### Add Audio
 
@@ -509,7 +492,7 @@ Use Web MIDI where available. Map MIDI CC or note input to state changes, then r
 - Add unit tests for note, interval, and state synchronization logic.
 - Add browser smoke tests that verify WebGL initializes and produces non-black pixels.
 - Add a shader error overlay for development builds.
-- Add URL hash or query-string state encoding for shareable presets.
+- Add URL hash or query-string state encoding for shareable settings.
 - Add explicit validation for imported or future persisted state.
 - Improve just-intonation note handling so key center and tuning reference are clear.
 - Clarify whether `Reference` should represent A4, X base frequency, or a general tuning anchor.
@@ -521,7 +504,6 @@ Use Web MIDI where available. Map MIDI CC or note input to state changes, then r
 
 - Remove the unused `getter` parameter from `bindNumberControl()` or use it for reset/sync semantics.
 - Centralize control metadata so min/max/step/format values are defined once.
-- Make preset definitions data-driven instead of branching inside `setPreset()`.
 - Add a small state apply function that handles mutation plus all required sync calls.
 - Separate tuning math from DOM wiring so it can be tested without a browser.
 - Give waveform enum values named constants to reduce reliance on magic numbers.

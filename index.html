@@ -142,6 +142,61 @@
       font-weight: 600;
     }
 
+    .controlDropdown summary {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin: 0;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .controlDropdown summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .summaryHeading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      color: #f3fff8;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .summaryHeading span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .summaryIcon {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(139, 255, 195, 0.24);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .summaryIcon::before {
+      content: "+";
+    }
+
+    .controlDropdown[open] .summaryIcon::before {
+      content: "-";
+    }
+
+    .displayControls {
+      padding-top: 12px;
+    }
+
     .helpAnchor,
     .labelTitle {
       display: inline-flex;
@@ -284,6 +339,10 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+    }
+
+    .buttonGrid.singleAction {
+      grid-template-columns: 1fr;
     }
 
     .compactGrid {
@@ -485,67 +544,61 @@
       </label>
     </section>
 
-    <section class="section">
-      <h2>Display <span>phosphor</span></h2>
-      <label data-help-key="persistence">
-        <span class="row"><span>Persistence</span><output data-out="persistence"></output></span>
-        <input id="persistence" type="range" min="0.86" max="0.997" step="0.001" value="0.972">
-      </label>
-      <label data-help-key="intensity">
-        <span class="row"><span>Trace intensity</span><output data-out="intensity"></output></span>
-        <input id="intensity" type="range" min="0.04" max="0.9" step="0.001" value="0.32">
-      </label>
-      <label data-help-key="focus">
-        <span class="row"><span>Focus</span><output data-out="focus"></output></span>
-        <input id="focus" type="range" min="1.2" max="5" step="0.1" value="2.4">
-      </label>
-      <label data-help-key="traceAntialias">
-        <span class="row"><span>Trace antialias</span><output data-out="traceAntialias"></output></span>
-        <input id="traceAntialias" type="range" min="0" max="1" step="0.01" value="0.54">
-      </label>
-      <div class="compactGrid">
-        <label data-help-key="traceStyle">Trace style
-          <select id="traceStyle">
-            <option value="hybrid">Hybrid</option>
-            <option value="points">Points</option>
-            <option value="lines">Connected</option>
-          </select>
+    <details class="section controlDropdown" id="displayOptions">
+      <summary>
+        <span class="summaryHeading">Display <span>phosphor</span></span>
+        <span class="summaryIcon" aria-hidden="true"></span>
+      </summary>
+      <div class="displayControls">
+        <label data-help-key="persistence">
+          <span class="row"><span>Persistence</span><output data-out="persistence"></output></span>
+          <input id="persistence" type="range" min="0.86" max="0.997" step="0.001" value="0.972">
         </label>
-        <label data-help-key="phosphorColor">Phosphor color
-          <input id="phosphorColor" type="color" value="#5cff9f" aria-label="Phosphor color">
+        <label data-help-key="intensity">
+          <span class="row"><span>Trace intensity</span><output data-out="intensity"></output></span>
+          <input id="intensity" type="range" min="0.04" max="0.9" step="0.001" value="0.32">
         </label>
+        <label data-help-key="focus">
+          <span class="row"><span>Focus</span><output data-out="focus"></output></span>
+          <input id="focus" type="range" min="1.2" max="5" step="0.1" value="2.4">
+        </label>
+        <label data-help-key="traceAntialias">
+          <span class="row"><span>Trace antialias</span><output data-out="traceAntialias"></output></span>
+          <input id="traceAntialias" type="range" min="0" max="1" step="0.01" value="0.54">
+        </label>
+        <div class="compactGrid">
+          <label data-help-key="traceStyle">Trace style
+            <select id="traceStyle">
+              <option value="hybrid">Hybrid</option>
+              <option value="points">Points</option>
+              <option value="lines">Connected</option>
+            </select>
+          </label>
+          <label data-help-key="phosphorColor">Phosphor color
+            <input id="phosphorColor" type="color" value="#5cff9f" aria-label="Phosphor color">
+          </label>
+        </div>
+        <label data-help-key="decay">
+          <span class="row"><span>Decay</span><output data-out="decay"></output></span>
+          <input id="decay" type="range" min="0.82" max="1" step="0.001" value="0.960">
+        </label>
+        <label data-help-key="bloom">
+          <span class="row"><span>Bloom</span><output data-out="bloom"></output></span>
+          <input id="bloom" type="range" min="0" max="2.2" step="0.01" value="0.82">
+        </label>
+        <label data-help-key="traceWindow">
+          <span class="row"><span>Trace window</span><output data-out="window"></output></span>
+          <input id="window" type="range" min="0.002" max="0.08" step="0.001" value="0.032">
+        </label>
+        <label data-help-key="samples">
+          <span class="row"><span>Samples/frame</span><output data-out="samples"></output></span>
+          <input id="samples" type="range" min="512" max="16384" step="512" value="8192">
+        </label>
+        <div class="buttonGrid singleAction">
+          <button id="toggleFreeze" type="button">Freeze</button>
+        </div>
       </div>
-      <label data-help-key="decayR">
-        <span class="row"><span>Red decay</span><output data-out="decayR"></output></span>
-        <input id="decayR" type="range" min="0.82" max="1" step="0.001" value="0.920">
-      </label>
-      <label data-help-key="decayG">
-        <span class="row"><span>Green decay</span><output data-out="decayG"></output></span>
-        <input id="decayG" type="range" min="0.82" max="1" step="0.001" value="1.000">
-      </label>
-      <label data-help-key="decayB">
-        <span class="row"><span>Blue decay</span><output data-out="decayB"></output></span>
-        <input id="decayB" type="range" min="0.82" max="1" step="0.001" value="0.960">
-      </label>
-      <label data-help-key="bloom">
-        <span class="row"><span>Bloom</span><output data-out="bloom"></output></span>
-        <input id="bloom" type="range" min="0" max="2.2" step="0.01" value="0.82">
-      </label>
-      <label data-help-key="traceWindow">
-        <span class="row"><span>Trace window</span><output data-out="window"></output></span>
-        <input id="window" type="range" min="0.002" max="0.08" step="0.001" value="0.032">
-      </label>
-      <label data-help-key="samples">
-        <span class="row"><span>Samples/frame</span><output data-out="samples"></output></span>
-        <input id="samples" type="range" min="512" max="16384" step="512" value="8192">
-      </label>
-      <div class="buttonGrid">
-        <button id="presetClassic" type="button">Classic ratio</button>
-        <button id="presetRosette" type="button">Rosette</button>
-        <button id="presetSquare" type="button">Square XY</button>
-        <button id="toggleFreeze" type="button">Freeze</button>
-      </div>
-    </section>
+    </details>
 
     <section class="section">
       <h2>Renderer <span>live</span></h2>
@@ -590,15 +643,15 @@
 
       const state = {
         x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0, note: "A2" },
-        y: { wave: 0, freq: 165, amp: 0.74, phase: 90, offset: 0, note: "E3" },
-        tuning: { freqMode: "hz", interval: "perfectFifth", temperament: "equal", referenceFreq: 110 },
+        y: { wave: 0, freq: 164.81377845643496, amp: 0.74, phase: 90, offset: 0, note: "E3" },
+        tuning: { freqMode: "interval", interval: "perfectFifth", temperament: "equal", referenceFreq: 110 },
         persistence: 0.972,
         intensity: 0.32,
         focus: 2.4,
         traceAntialias: 0.54,
         traceStyle: "hybrid",
         phosphorColor: [0.36, 1.0, 0.62],
-        decay: { r: 0.92, g: 1.0, b: 0.96 },
+        decay: 0.96,
         bloom: 0.82,
         window: 0.032,
         samples: 8192,
@@ -729,17 +782,9 @@
           title: "Phosphor color",
           text: "Changes the trace and grid tint. Green feels like a classic CRT, amber is warmer, and blue-white reads as a sharper electronic display."
         },
-        decayR: {
-          title: "Red decay",
-          text: "Controls how long the red color channel remains in the persistence buffer. Uneven RGB decay creates color trails as older samples fade."
-        },
-        decayG: {
-          title: "Green decay",
-          text: "Controls how long the green channel remains. Keeping green high preserves the classic phosphor body while other channels fade around it."
-        },
-        decayB: {
-          title: "Blue decay",
-          text: "Controls how long the blue channel remains. Raising it can make cooler afterglow trails; lowering it keeps the image closer to green phosphor."
+        decay: {
+          title: "Decay",
+          text: "Controls how long the persistence buffer remains after each frame. Lower values clear old samples faster; higher values keep longer phosphor trails."
         },
         bloom: {
           title: "Bloom",
@@ -1390,11 +1435,9 @@
         });
         controls.note.addEventListener("input", () => {
           model.note = controls.note.value;
-          if (state.tuning.freqMode === "note") {
-            setOscFrequency(osc, noteFrequency(model.note));
-          } else if (state.tuning.freqMode === "interval") {
-            applyIntervalMode(osc);
-          }
+          state.tuning.freqMode = "note";
+          syncGlobalModeControls();
+          applyNoteMode();
         });
         syncModeControls(osc);
         syncFrequencyControls(osc);
@@ -1405,9 +1448,7 @@
         bindNumberControl(document.getElementById("intensity"), document.querySelector("[data-out='intensity']"), () => state.intensity, v => { state.intensity = v; }, v => v.toFixed(3));
         bindNumberControl(document.getElementById("focus"), document.querySelector("[data-out='focus']"), () => state.focus, v => { state.focus = v; }, v => `${v.toFixed(1)} px`);
         bindNumberControl(document.getElementById("traceAntialias"), document.querySelector("[data-out='traceAntialias']"), () => state.traceAntialias, v => { state.traceAntialias = v; }, v => v.toFixed(2));
-        bindNumberControl(document.getElementById("decayR"), document.querySelector("[data-out='decayR']"), () => state.decay.r, v => { state.decay.r = v; }, v => v.toFixed(3));
-        bindNumberControl(document.getElementById("decayG"), document.querySelector("[data-out='decayG']"), () => state.decay.g, v => { state.decay.g = v; }, v => v.toFixed(3));
-        bindNumberControl(document.getElementById("decayB"), document.querySelector("[data-out='decayB']"), () => state.decay.b, v => { state.decay.b = v; }, v => v.toFixed(3));
+        bindNumberControl(document.getElementById("decay"), document.querySelector("[data-out='decay']"), () => state.decay, v => { state.decay = v; }, v => v.toFixed(3));
         bindNumberControl(document.getElementById("bloom"), document.querySelector("[data-out='bloom']"), () => state.bloom, v => { state.bloom = v; }, v => v.toFixed(2));
         bindNumberControl(document.getElementById("window"), document.querySelector("[data-out='window']"), () => state.window, v => { state.window = v; }, v => `${(v * 1000).toFixed(1)} ms`);
         bindNumberControl(document.getElementById("samples"), document.querySelector("[data-out='samples']"), () => state.samples, v => { state.samples = v | 0; }, v => String(v | 0));
@@ -1454,7 +1495,9 @@
         for (const button of temperamentButtons) {
           button.addEventListener("click", () => {
             state.tuning.temperament = button.dataset.temperament;
+            state.tuning.freqMode = "interval";
             syncTemperamentButtons();
+            syncGlobalModeControls();
             applyGlobalFrequencyMode();
           });
         }
@@ -1475,48 +1518,11 @@
         });
       }
 
-      function setPreset(preset) {
-        if (preset === "classic") {
-          Object.assign(state.x, { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0 });
-          Object.assign(state.y, { wave: 0, freq: 165, amp: 0.74, phase: 90, offset: 0 });
-        } else if (preset === "rosette") {
-          Object.assign(state.x, { wave: 0, freq: 97.5, amp: 0.78, phase: 0, offset: 0 });
-          Object.assign(state.y, { wave: 0, freq: 162.5, amp: 0.78, phase: 37, offset: 0 });
-        } else {
-          Object.assign(state.x, { wave: 2, freq: 75, amp: 0.68, phase: 0, offset: 0 });
-          Object.assign(state.y, { wave: 1, freq: 150, amp: 0.68, phase: 90, offset: 0 });
-        }
-        state.tuning.freqMode = "hz";
-        syncControlsFromState();
-      }
-
-      function syncControlsFromState() {
-        for (const osc of ["x", "y"]) {
-          const section = document.querySelector(`[data-osc='${osc}']`);
-          const model = state[osc];
-          section.querySelector("[data-param='wave']").value = String(model.wave);
-          for (const param of ["freq", "amp", "phase", "offset"]) {
-            const input = section.querySelector(`[data-param='${param}']`);
-            input.value = String(model[param]);
-            if (param === "freq") {
-              syncModeControls(osc);
-              syncFrequencyControls(osc);
-            } else {
-              section.querySelector(`[data-out='${param}']`).textContent = formatParam(param, model[param]);
-            }
-          }
-        }
-        syncGlobalModeControls();
-      }
-
       setupHelpTips();
       wireOsc(document.querySelector("[data-osc='x']"), "x");
       wireOsc(document.querySelector("[data-osc='y']"), "y");
       wireTuning();
       wireDisplay();
-      document.getElementById("presetClassic").addEventListener("click", () => setPreset("classic"));
-      document.getElementById("presetRosette").addEventListener("click", () => setPreset("rosette"));
-      document.getElementById("presetSquare").addEventListener("click", () => setPreset("square"));
       document.getElementById("toggleFreeze").addEventListener("click", event => {
         state.frozen = !state.frozen;
         event.currentTarget.textContent = state.frozen ? "Resume" : "Freeze";
@@ -1554,9 +1560,9 @@
         const hold = persistence >= 1.0;
         gl.uniform3f(
           loc.fade.decay,
-          hold ? 1.0 : persistence * state.decay.r,
-          hold ? 1.0 : persistence * state.decay.g,
-          hold ? 1.0 : persistence * state.decay.b
+          hold ? 1.0 : persistence * state.decay,
+          hold ? 1.0 : persistence * state.decay,
+          hold ? 1.0 : persistence * state.decay
         );
         gl.drawArrays(gl.TRIANGLES, 0, 3);
 
