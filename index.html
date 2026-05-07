@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <!-- viewport-fit=cover lets the layout claim safe-area aware mobile viewport space, which matters when this runs as a fullscreen-ish Android/webview page. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Interval Temperament Visualizer</title>
   <style>
     :root {
+      /* Central tokens keep the single-file app editable without hunting through repeated colors, radii, and shadow values. */
       color-scheme: light;
       --md-blue: #1a73e8;
       --md-green: #34a853;
@@ -57,6 +59,7 @@
     }
 
     .appShell {
+      /* The visualizer is the primary work area, so desktop uses one flexible canvas column plus one fixed-width control rail. */
       display: grid;
       grid-template-columns: minmax(0, 1fr) 420px;
       gap: 16px;
@@ -74,6 +77,7 @@
     }
 
     .visualPanel {
+      /* Rows are explicit so the canvas can absorb remaining height while headers, keyboards, and readouts keep stable sizes. */
       display: grid;
       grid-template-rows: auto auto minmax(320px, 1fr) auto;
       overflow: hidden;
@@ -154,6 +158,7 @@
       width: 100%;
       height: 100%;
       min-height: 320px;
+      /* Prevent touch panning/zoom gestures from fighting with the canvas surface on mobile browsers. */
       touch-action: none;
     }
 
@@ -171,6 +176,7 @@
 
     .visualPanel[data-view="equal"] .paneLabels,
     .visualPanel[data-view="just"] .paneLabels {
+      /* The same labels are reused for split and single-pane modes; data-view keeps this declarative in CSS. */
       grid-template-columns: 1fr;
     }
 
@@ -231,10 +237,11 @@
       padding: 10px 12px;
       border: 1px solid var(--md-border);
       border-radius: var(--radius);
-      background: #fff;
+      background: #cfedff;
       color: var(--md-muted);
       font-size: 12px;
       line-height: 1.45;
+      /* The popover explains the keyboard model but should not steal taps from the keyboard buttons underneath. */
       pointer-events: none;
       box-shadow: 0 12px 28px rgba(60, 64, 67, 0.18);
     }
@@ -388,6 +395,7 @@
     .whiteKeys {
       position: absolute;
       inset: 0;
+      /* Two octaves of white keys provide the measurement grid used to position black keys by fractional white-key units. */
       display: grid;
       grid-template-columns: repeat(14, minmax(0, 1fr));
     }
@@ -420,6 +428,7 @@
       top: 0;
       z-index: 2;
       width: 5.2%;
+      /* A percentage width keeps accidentals visually aligned with the generated white-key grid across responsive sizes. */
       height: 46%;
       border: 0;
       border-radius: 0 0 5px 5px;
@@ -559,6 +568,7 @@
     }
 
     @media (max-width: 1020px) {
+      /* Below tablet width the side rail becomes a normal block so the canvas remains wide enough to read. */
       .appShell {
         grid-template-columns: 1fr;
       }
@@ -569,6 +579,7 @@
     }
 
     @media (max-width: 680px) {
+      /* Small screens keep the same controls, but compress fixed-height surfaces before changing the interaction model. */
       .appShell {
         padding: 10px;
       }
@@ -616,6 +627,7 @@
     }
 
     @media (max-width: 440px) {
+      /* Very narrow screens stack segmented controls and readouts to avoid clipped button labels. */
       .fieldGrid {
         grid-template-columns: 1fr;
       }
@@ -654,6 +666,7 @@
 </head>
 <body>
   <div class="appShell">
+    <!-- data-view is the shared contract between controls, CSS labels, audio temperament defaults, and the WebGL pane layout. -->
     <main class="visualPanel" data-view="both" aria-label="Temperament comparison display">
       <header class="visualHeader">
         <div>
@@ -666,6 +679,7 @@
         </div>
       </header>
 
+      <!-- The keyboards are intentionally equal-tempered selectors; the just-intonation difference is computed after selection, not by retuning the key positions. -->
       <section class="pianoRow" aria-label="Piano note selection">
         <div class="pianoInfo">
           <button class="infoButton" id="keyboardInfoButton" type="button" aria-label="Keyboard tuning note" aria-expanded="false" aria-controls="keyboardInfoText" title="Keyboard tuning note">i</button>
@@ -690,14 +704,17 @@
       </section>
 
       <div class="canvasWrap">
+        <!-- These labels are HTML overlays instead of WebGL text so the renderer can stay focused on fast numeric drawing. -->
         <div class="paneLabels" aria-hidden="true">
           <span class="paneLabel equal"><span class="swatch equal"></span>Equal temperament</span>
           <span class="paneLabel just"><span class="swatch just"></span>Just intonation</span>
         </div>
+        <!-- The canvas draws both the CRT-style grid and the Lissajous traces; HTML readouts mirror the same comparison data for precision. -->
         <canvas id="visualizer"></canvas>
         <div class="webglNotice" id="webglNotice">WebGL2 is required for the live comparison display.</div>
       </div>
 
+      <!-- The strip surfaces the same computed values used by the shader and audio engine, keeping the visual and numeric stories aligned. -->
       <section class="readoutStrip" aria-label="Primary comparison readouts">
         <div class="metric"><span>X root</span><strong id="xSummary">C3 - 130.81 Hz</strong></div>
         <div class="metric"><span>Y target</span><strong id="ySummary">G3</strong></div>
@@ -709,6 +726,7 @@
     <aside class="controlPanel" aria-label="Controls">
       <section class="section compact">
         <h2>Visual comparison</h2>
+        <!-- Buttons carry data-* values so one event handler can update state without hardcoding each button id. -->
         <div class="segmented visual compact" id="viewMode" role="group" aria-label="Visual mode">
           <button type="button" data-view="equal" aria-pressed="false">Equal</button>
           <button type="button" data-view="just" aria-pressed="false">Just</button>
@@ -719,6 +737,7 @@
       <section class="section compact">
         <h2>Audio</h2>
         <div class="audioControls compact">
+          <!-- Audio starts only after a user gesture because browsers block autoplaying Web Audio contexts. -->
           <button class="primaryButton compactButton" id="toggleAudio" type="button">Enable audio</button>
           <div class="segmented audio compact" id="audioTemperament" role="group" aria-label="Audio temperament">
             <button type="button" data-audio="equal" aria-pressed="true">Hear equal</button>
@@ -735,6 +754,7 @@
 
       <section class="section">
         <h2>Comparison data</h2>
+        <!-- Detailed cards preserve exact ratios, Hz, and cents so the animated trace can be audited numerically. -->
         <div class="fieldGrid">
           <div class="readoutCard"><span>Equal ratio</span><strong id="equalRatio">1.498307</strong></div>
           <div class="readoutCard"><span>Just ratio</span><strong id="justRatio">3:2</strong></div>
@@ -748,6 +768,7 @@
       <section class="section">
         <h2>Export</h2>
         <div class="exportControls">
+          <!-- Export reuses the live canvas path, which keeps saved PNGs visually identical to the current comparison. -->
           <button class="secondaryButton" id="saveImage" type="button">Save comparison PNG</button>
           <div class="statusLine" id="exportStatus" aria-live="polite"></div>
         </div>
@@ -757,10 +778,12 @@
 
   <script>
     (() => {
+      // IIFE + strict mode keeps this dependency-free file from leaking helpers into window while still running directly from index.html.
       "use strict";
 
       const canvas = document.getElementById("visualizer");
       const gl = canvas.getContext("webgl2", {
+        // alpha:false gives the shader an opaque target, and preserveDrawingBuffer lets canvas.toBlob capture the just-rendered frame.
         antialias: true,
         alpha: false,
         preserveDrawingBuffer: true
@@ -779,6 +802,7 @@
       const KEY_RANGE = buildKeyRange(48, 71);
       const TAU = Math.PI * 2;
 
+      // Just intonation is stored as root-relative ratios because X is the root and Y is recalculated from that root for each interval.
       const JUST_INTERVALS = [
         { semitones: 0, name: "Unison", ratio: 1, label: "1:1" },
         { semitones: 1, name: "Minor second", ratio: 16 / 15, label: "16:15" },
@@ -807,6 +831,7 @@
       ];
       const JUST_BY_SEMITONES = new Map(JUST_INTERVALS.map(interval => [interval.semitones, interval]));
 
+      // All mutable UI, audio, and render choices flow through state so syncAll() can reconcile the DOM, WebGL inputs, and Web Audio together.
       const state = {
         viewMode: "both",
         audioEnabled: false,
@@ -819,6 +844,7 @@
         pointSize: 1.45
       };
 
+      // Cache the DOM lookups once; the render loop reads numeric state, not the document, to avoid layout work per frame.
       const els = {
         visualPanel: document.querySelector(".visualPanel"),
         xSummary: document.getElementById("xSummary"),
@@ -844,6 +870,7 @@
         saveImage: document.getElementById("saveImage")
       };
 
+      // Web Audio nodes are created lazily after a user gesture, then reused by suspending/resuming the context instead of rebuilding the graph.
       const audio = {
         ctx: null,
         xOsc: null,
@@ -854,10 +881,12 @@
       };
 
       if (!gl) {
+        // Without WebGL2 the shader path cannot run, so fail visibly before compiling programs or starting the animation loop.
         notice.style.display = "grid";
         return;
       }
 
+      // Fullscreen triangle avoids a vertex buffer and covers the viewport with one draw call for the background grid.
       const vertFull = `#version 300 es
         const vec2 POS[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
         out vec2 vUv;
@@ -875,6 +904,7 @@
 
         float gridLine(float value, float scale, float width) {
           float coord = value * scale;
+          // fwidth anti-aliases the procedural grid so lines stay stable across device-pixel ratios.
           float dist = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
           return 1.0 - smoothstep(width, width + 1.0, dist);
         }
@@ -903,6 +933,7 @@
         void main() {
           float id = float(gl_VertexID);
           float f = id / max(uSampleCount - 1.0, 1.0);
+          // Each vertex samples a time offset across the trace window, turning two oscillator frequencies into an XY Lissajous curve.
           float localTime = uTime + f * uTraceWindow;
           float x = sin(6.28318530718 * uXFreq * localTime) * 0.76;
           float y = sin(6.28318530718 * uYFreq * localTime + 1.57079632679) * 0.76;
@@ -931,6 +962,7 @@
         void main() {
           vec2 p = gl_PointCoord * 2.0 - 1.0;
           float d = dot(p, p);
+          // Points are softly masked circles so the line has a phosphor-like glow without a separate post-processing pass.
           float mask = 1.0 - smoothstep(0.52, 1.0, d);
           float head = mix(0.58, 1.0, vAge);
           outColor = vec4(uColor * head, mask * uAlpha);
@@ -939,6 +971,7 @@
       const gridProgram = createProgram(vertFull, fragGrid);
       const lineProgram = createProgram(vertTrace, fragLine);
       const pointProgram = createProgram(vertTrace, fragPoint);
+      // Uniform locations are resolved once because the hot path only needs to push new numbers into already-linked programs.
       const loc = {
         grid: {
           resolution: gl.getUniformLocation(gridProgram, "uResolution")
@@ -951,6 +984,7 @@
       let height = 0;
       let lastNow = 0;
       let simTime = 0;
+      // currentComparison is cached so readouts, audio, drawing, and export consume one consistent snapshot after every state change.
       let currentComparison = computeComparison();
 
       function buildKeyRange(minMidi, maxMidi) {
@@ -973,15 +1007,18 @@
       }
 
       function equalFrequency(note) {
+        // A4=440 is the equal-temperament anchor; everything else is a semitone offset from MIDI note 69.
         return 440 * Math.pow(2, (noteToMidi(note) - 69) / 12);
       }
 
       function signedJustInterval(delta) {
         const direction = Math.sign(delta) || 1;
         const abs = Math.abs(delta);
+        // Direct table entries cover the visible keyboard span; modulo + octave math keeps wider intervals meaningful if the range changes later.
         const base = JUST_BY_SEMITONES.get(abs) || JUST_BY_SEMITONES.get(abs % 12) || JUST_BY_SEMITONES.get(0);
         const octaves = Math.floor(abs / 12);
         const within = abs > 23 ? base.ratio * Math.pow(2, octaves) : base.ratio;
+        // Downward intervals invert the ratio because Y is below the X root instead of above it.
         const ratio = direction < 0 ? 1 / within : within;
         const label = direction < 0 ? invertRatioLabel(base.label) : base.label;
         return { ...base, ratio, label };
@@ -1012,8 +1049,10 @@
         const xFreq = equalFrequency(state.xNote);
         const eqRatio = equalRatio(semitones);
         const just = signedJustInterval(semitones);
+        // Equal and just Y both start from the same X frequency, isolating the temperament difference to the interval ratio.
         const equalY = xFreq * eqRatio;
         const justY = xFreq * just.ratio;
+        // Cents are logarithmic, so this reports perceived pitch distance instead of only raw Hz separation.
         const centsDelta = 1200 * Math.log2(justY / equalY);
         const hzDelta = justY - equalY;
         return {
@@ -1048,6 +1087,7 @@
 
         let whiteIndex = 0;
         for (const key of KEY_RANGE) {
+          // Generating keys from MIDI data keeps the two keyboards identical and makes later range changes data-only.
           const button = document.createElement("button");
           button.type = "button";
           button.className = `key ${WHITE_NAMES.has(key.name) ? "whiteKey" : "blackKey"}`;
@@ -1068,6 +1108,7 @@
             whiteLayer.appendChild(button);
             whiteIndex++;
           } else {
+            // Black keys sit over the white-key grid; offsets are measured in white-key units from C3.
             const octaveOffset = Math.floor((key.midi - 48) / 12) * 7;
             const octaveName = key.name;
             const leftUnits = octaveOffset + BLACK_OFFSETS.get(octaveName);
@@ -1113,6 +1154,7 @@
         group.classList.toggle("hidden", state.viewMode !== "both");
         els.volumeControl.classList.toggle("hidden", !state.audioEnabled);
         if (state.viewMode !== "both") {
+          // In single-pane mode the audible Y must follow the visible temperament, so the separate audio picker is collapsed.
           state.audioTemperament = state.viewMode;
         }
         syncButtons("audioTemperament", "audio", state.audioTemperament);
@@ -1125,6 +1167,7 @@
       }
 
       function syncAll() {
+        // This is the single reconciliation point after user actions: update view state, readouts, keyboard ARIA, and any running audio.
         els.visualPanel.dataset.view = state.viewMode;
         syncButtons("viewMode", "view", state.viewMode);
         syncAudioVisibility();
@@ -1140,6 +1183,7 @@
         gl.shaderSource(shader, source);
         gl.compileShader(shader);
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          // Surface shader errors immediately; silent WebGL failure would otherwise leave only a blank canvas.
           throw new Error(gl.getShaderInfoLog(shader) || "Shader compilation failed");
         }
         return shader;
@@ -1170,6 +1214,7 @@
       }
 
       function resize() {
+        // DPR is capped at 2 to keep the Android/mobile fill-rate cost bounded while still looking sharp on high-density screens.
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const nextWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr));
         const nextHeight = Math.max(1, Math.floor(canvas.clientHeight * dpr));
@@ -1204,6 +1249,7 @@
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
+        // Draw the continuous path first, then low-alpha points on top to suggest sampled phosphor persistence.
         gl.useProgram(lineProgram);
         setTraceUniforms(loc.line, xFreq, yFreq, color, alpha, time, pointSize);
         gl.drawArrays(gl.LINE_STRIP, 0, state.samples);
@@ -1222,6 +1268,7 @@
       }
 
       function drawScene(targetFb, targetWidth, targetHeight, time, pointScale = 1) {
+        // targetFb stays parameterized even though exports currently use the visible canvas, leaving room for offscreen capture later.
         gl.bindFramebuffer(gl.FRAMEBUFFER, targetFb);
         gl.viewport(0, 0, targetWidth, targetHeight);
         gl.disable(gl.BLEND);
@@ -1233,6 +1280,7 @@
         const justColor = [249 / 255, 171 / 255, 0 / 255];
 
         if (state.viewMode === "both") {
+          // Split mode uses two independent viewports so equal and just traces get identical scale but separate timing/frequency inputs.
           const gap = Math.max(10, Math.round(Math.min(targetWidth * 0.018, 24) * pointScale));
           const paneWidth = Math.floor((targetWidth - gap) / 2);
           const rightX = paneWidth + gap;
@@ -1251,6 +1299,7 @@
 
       function render(now) {
         resize();
+        // Clamp dt so a background-tab pause does not jump the waveform far enough to look like a discontinuity when resumed.
         const dt = Math.min((now - lastNow) * 0.001, 0.05);
         lastNow = now;
         simTime += dt;
@@ -1263,6 +1312,7 @@
         els.saveImage.disabled = true;
         els.exportStatus.textContent = "Rendering comparison image...";
         try {
+          // Redraw just before capture so the PNG matches the latest state even if the previous animation frame was mid-update.
           drawScene(null, width, height, simTime, Math.min(window.devicePixelRatio || 1, 2));
           const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
           if (!blob) {
@@ -1272,6 +1322,7 @@
           const url = URL.createObjectURL(blob);
           link.href = url;
           link.download = `interval-temperament-${new Date().toISOString().replace(/[:.]/g, "-")}.png`;
+          // Temporary anchor clicks are the most compatible no-dependency download path for local/static hosting.
           document.body.appendChild(link);
           link.click();
           link.remove();
@@ -1290,12 +1341,14 @@
         const normalizer = Math.tanh(drive);
         for (let i = 0; i < size; i++) {
           const x = (i / (size - 1)) * 2 - 1;
+          // Gentle tanh shaping softens summed oscillator peaks so the demo stays listenable at normal volume.
           curve[i] = Math.tanh(x * drive) / normalizer;
         }
         return curve;
       }
 
       function volumeToGain(value) {
+        // The exponent gives finer control near quiet levels; the final multiplier keeps two oscillators below uncomfortable loudness.
         return Math.pow(Math.max(0, Math.min(1, value)), 1.45) * 0.14;
       }
 
@@ -1329,6 +1382,7 @@
           audio.xOsc.start();
           audio.yOsc.start();
         }
+        // resume() must happen after the click path; browsers keep newly created AudioContexts suspended until user intent is clear.
         await audio.ctx.resume();
         state.audioEnabled = true;
         updateAudioFrequencies();
@@ -1354,6 +1408,7 @@
         }
         const now = audio.ctx.currentTime;
         const yFreq = state.audioTemperament === "just" ? currentComparison.justY : currentComparison.equalY;
+        // setTargetAtTime removes zipper clicks when keyboard or temperament choices retune the running oscillators.
         audio.xOsc.frequency.setTargetAtTime(currentComparison.xFreq, now, 0.015);
         audio.yOsc.frequency.setTargetAtTime(yFreq, now, 0.015);
         const label = state.audioTemperament === "just" ? "just intonation" : "equal temperament";
@@ -1368,6 +1423,7 @@
         if (!button) return;
         state.viewMode = button.dataset.view;
         if (state.viewMode !== "both") {
+          // Single-view selection also chooses the audible temperament so hearing and seeing stay coupled.
           state.audioTemperament = state.viewMode;
         }
         syncAll();

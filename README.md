@@ -16,6 +16,18 @@ python -m http.server 5177 --bind 127.0.0.1
 
 Then open `http://127.0.0.1:5177/`.
 
+## Native Android Port
+
+A React Native / Expo Android port lives in `mobile/`. It keeps this single-file browser app as the reference implementation while rebuilding the visualizer with React Native Skia, audio with `react-native-audio-api`, and PNG export through Android sharing.
+
+```powershell
+cd mobile
+npm install
+npm run android
+```
+
+The native project uses Expo dev builds, not Expo Go, because it depends on native Skia and audio modules.
+
 ## What It Shows
 
 - Two fixed C3-B4 piano keyboard graphics.
