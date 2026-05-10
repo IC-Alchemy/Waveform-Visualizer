@@ -13,7 +13,7 @@ describe("temperament comparison model", () => {
     const comparison = computeComparison(DEFAULT_COMPARISON_STATE);
 
     expect(comparison.semitones).toBe(7);
-    expect(comparison.intervalLabel).toBe("Perfect fifth up");
+    expect(comparison.intervalLabel).toBe("Perfect 5th up");
     expect(comparison.justLabel).toBe("3:2");
     expect(comparison.eqRatio).toBeCloseTo(1.498307, 6);
     expect(comparison.justRatio).toBe(1.5);
@@ -37,7 +37,7 @@ describe("temperament comparison model", () => {
 
     expect(interval.label).toBe("2:3");
     expect(interval.ratio).toBeCloseTo(2 / 3, 8);
-    expect(comparison.intervalLabel).toBe("Perfect fifth down");
+    expect(comparison.intervalLabel).toBe("Perfect 5th down");
     expect(comparison.justY).toBeCloseTo(comparison.xFreq * (2 / 3), 6);
   });
 

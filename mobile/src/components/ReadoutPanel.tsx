@@ -1,13 +1,15 @@
 import { StyleSheet, Text, View } from "react-native";
 import { type ComparisonResult, formatHz, formatSigned } from "../model/comparison";
+import type { AppTheme } from "../model/ui";
 
 interface ReadoutPanelProps {
   comparison: ComparisonResult;
   xNote: string;
   yNote: string;
+  theme: AppTheme;
 }
 
-export function ReadoutPanel({ comparison, xNote, yNote }: ReadoutPanelProps) {
+export function ReadoutPanel({ comparison, xNote, yNote, theme }: ReadoutPanelProps) {
   const rows = [
     ["Notes", `${xNote} -> ${yNote}`],
     ["Interval", `${comparison.intervalLabel} (${comparison.semitones})`],
@@ -23,8 +25,8 @@ export function ReadoutPanel({ comparison, xNote, yNote }: ReadoutPanelProps) {
     <View style={styles.panel}>
       {rows.map(([label, value]) => (
         <View key={label} style={styles.row}>
-          <Text style={styles.label}>{label}</Text>
-          <Text style={styles.value}>{value}</Text>
+          <Text style={[styles.label, { color: theme.textSubtle }]}>{label}</Text>
+          <Text style={[styles.value, { color: theme.text }]}>{value}</Text>
         </View>
       ))}
     </View>
@@ -38,19 +40,19 @@ const styles = StyleSheet.create({
   row: {
     minHeight: 28,
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 14,
   },
   label: {
-    color: "#657181",
     fontSize: 12,
     fontWeight: "700",
     textTransform: "uppercase",
   },
   value: {
-    flexShrink: 1,
-    color: "#111827",
+    flex: 1,
+    minWidth: 150,
     fontSize: 14,
     fontWeight: "700",
     textAlign: "right",

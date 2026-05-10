@@ -3,10 +3,7 @@ import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import { useAnimationTime } from "../hooks/useAnimationTime";
 import { type ComparisonResult, type ViewMode } from "../model/comparison";
-import { visiblePaneLabels } from "../model/ui";
-
-const EQUAL_COLOR = "#00acc1";
-const JUST_COLOR = "#f9ab00";
+import { type AppTheme, visiblePaneLabels } from "../model/ui";
 
 export interface VisualizerHandle {
   capturePngBase64: () => Promise<string>;
@@ -14,11 +11,13 @@ export interface VisualizerHandle {
 
 interface VisualizerProps {
   comparison: ComparisonResult;
+  height: number;
+  theme: AppTheme;
   viewMode: ViewMode;
 }
 
 export const Visualizer = forwardRef<VisualizerHandle, VisualizerProps>(function Visualizer(
-  { comparison, viewMode },
+  { comparison, height, theme, viewMode },
   ref,
 ) {
   const canvasRef = useCanvasRef();
@@ -47,12 +46,12 @@ export const Visualizer = forwardRef<VisualizerHandle, VisualizerProps>(function
         label,
         y,
         height: paneHeight,
-        color: isEqual ? EQUAL_COLOR : JUST_COLOR,
+        color: isEqual ? theme.equalAccent : theme.justAccent,
         path: makeTracePath(size.width, paneHeight, comparison.xFreq, yFreq, time),
         points: makeTracePoints(size.width, paneHeight, comparison.xFreq, yFreq, time),
       };
     });
-  }, [comparison, size, time, viewMode]);
+  }, [comparison, size, theme.equalAccent, theme.justAccent, time, viewMode]);
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
@@ -60,13 +59,28 @@ export const Visualizer = forwardRef<VisualizerHandle, VisualizerProps>(function
   };
 
   return (
-    <View style={styles.shell} onLayout={handleLayout}>
+    <View
+      style={[
+        styles.shell,
+        {
+          height,
+          backgroundColor: theme.visualizerBackground,
+          borderColor: theme.border,
+        },
+      ]}
+      onLayout={handleLayout}
+    >
       <Canvas ref={canvasRef} style={styles.canvas} opaque>
-        <Rect x={0} y={0} width={size.width} height={size.height} color="#f9fbfe" />
+        <Rect x={0} y={0} width={size.width} height={size.height} color={theme.visualizerBackground} />
         {panes.map((pane) => (
           <Group key={pane.label} transform={[{ translateY: pane.y }]}>
-            <Rect x={0} y={0} width={size.width} height={pane.height} color="#f9fbfe" />
-            <Grid width={size.width} height={pane.height} />
+            <Rect x={0} y={0} width={size.width} height={pane.height} color={theme.visualizerBackground} />
+            <Grid
+              width={size.width}
+              height={pane.height}
+              minorColor={theme.visualizerGridMinor}
+              majorColor={theme.visualizerGridMajor}
+            />
             <Path path={pane.path} color={pane.color} style="stroke" strokeWidth={2.2} strokeCap="round" strokeJoin="round" />
             <Path path={pane.path} color={pane.color} opacity={0.18} style="stroke" strokeWidth={7} strokeCap="round" strokeJoin="round" />
             {pane.points.map((point, index) => (
@@ -84,7 +98,17 @@ export const Visualizer = forwardRef<VisualizerHandle, VisualizerProps>(function
       </Canvas>
       <View pointerEvents="none" style={styles.labels}>
         {panes.map((pane) => (
-          <Text key={pane.label} style={[styles.label, { top: pane.y + 10 }]}>
+          <Text
+            key={pane.label}
+            style={[
+              styles.label,
+              {
+                top: pane.y + 10,
+                backgroundColor: theme.visualizerLabelBackground,
+                color: theme.text,
+              },
+            ]}
+          >
             {pane.label}
           </Text>
         ))}
@@ -93,20 +117,30 @@ export const Visualizer = forwardRef<VisualizerHandle, VisualizerProps>(function
   );
 });
 
-function Grid({ width, height }: { width: number; height: number }) {
+function Grid({
+  width,
+  height,
+  minorColor,
+  majorColor,
+}: {
+  width: number;
+  height: number;
+  minorColor: string;
+  majorColor: string;
+}) {
   const minor = [];
   const major = [];
   for (let i = 1; i < 10; i += 1) {
     const x = (width * i) / 10;
     const y = (height * i) / 10;
-    minor.push(<Line key={`mx-${i}`} p1={{ x, y: 0 }} p2={{ x, y: height }} color="#d5deea" strokeWidth={0.7} />);
-    minor.push(<Line key={`my-${i}`} p1={{ x: 0, y }} p2={{ x: width, y }} color="#d5deea" strokeWidth={0.7} />);
+    minor.push(<Line key={`mx-${i}`} p1={{ x, y: 0 }} p2={{ x, y: height }} color={minorColor} strokeWidth={0.7} />);
+    minor.push(<Line key={`my-${i}`} p1={{ x: 0, y }} p2={{ x: width, y }} color={minorColor} strokeWidth={0.7} />);
   }
   for (let i = 1; i < 2; i += 1) {
     const x = (width * i) / 2;
     const y = (height * i) / 2;
-    major.push(<Line key={`gx-${i}`} p1={{ x, y: 0 }} p2={{ x, y: height }} color="#aebbc9" strokeWidth={1.1} />);
-    major.push(<Line key={`gy-${i}`} p1={{ x: 0, y }} p2={{ x: width, y }} color="#aebbc9" strokeWidth={1.1} />);
+    major.push(<Line key={`gx-${i}`} p1={{ x, y: 0 }} p2={{ x, y: height }} color={majorColor} strokeWidth={1.1} />);
+    major.push(<Line key={`gy-${i}`} p1={{ x: 0, y }} p2={{ x: width, y }} color={majorColor} strokeWidth={1.1} />);
   }
   return (
     <>
@@ -157,12 +191,9 @@ function makeTracePoints(width: number, height: number, xFreq: number, yFreq: nu
 
 const styles = StyleSheet.create({
   shell: {
-    height: 320,
     overflow: "hidden",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#cbd5e1",
-    backgroundColor: "#f9fbfe",
   },
   canvas: {
     flex: 1,
@@ -174,8 +205,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 12,
     borderRadius: 5,
-    backgroundColor: "rgba(255,255,255,0.78)",
-    color: "#26313f",
     fontSize: 12,
     fontWeight: "800",
     paddingHorizontal: 8,

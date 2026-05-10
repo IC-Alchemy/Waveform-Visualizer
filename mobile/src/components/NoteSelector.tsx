@@ -1,17 +1,19 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NOTE_RANGE, type NoteName } from "../model/comparison";
+import type { AppTheme } from "../model/ui";
 
 interface NoteSelectorProps {
   label: string;
   value: NoteName;
   onChange: (note: NoteName) => void;
   accentColor: string;
+  theme: AppTheme;
 }
 
-export function NoteSelector({ label, value, onChange, accentColor }: NoteSelectorProps) {
+export function NoteSelector({ label, value, onChange, accentColor, theme }: NoteSelectorProps) {
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{label}</Text>
+      <Text style={[styles.title, { color: theme.textMuted }]}>{label}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.keys}>
         {NOTE_RANGE.map((key) => {
           const selected = key.note === value;
@@ -24,11 +26,25 @@ export function NoteSelector({ label, value, onChange, accentColor }: NoteSelect
               onPress={() => onChange(key.note)}
               style={[
                 styles.key,
-                isSharp && styles.blackKey,
+                {
+                  backgroundColor: theme.surfaceRaised,
+                  borderColor: theme.border,
+                },
+                isSharp && {
+                  backgroundColor: theme.keySharpBackground,
+                  borderColor: theme.keySharpBorder,
+                },
                 selected && { backgroundColor: accentColor, borderColor: accentColor },
               ]}
             >
-              <Text style={[styles.keyText, isSharp && styles.blackKeyText, selected && styles.selectedKeyText]}>
+              <Text
+                style={[
+                  styles.keyText,
+                  { color: theme.text },
+                  isSharp && { color: theme.keySharpText },
+                  selected && { color: theme.selectedText },
+                ]}
+              >
                 {key.note}
               </Text>
             </Pressable>
@@ -44,7 +60,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    color: "#485465",
     fontSize: 13,
     fontWeight: "800",
   },
@@ -58,23 +73,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#ccd5df",
     borderRadius: 6,
-    backgroundColor: "#ffffff",
-  },
-  blackKey: {
-    backgroundColor: "#2a3440",
-    borderColor: "#2a3440",
   },
   keyText: {
-    color: "#26313f",
     fontSize: 12,
     fontWeight: "800",
-  },
-  blackKeyText: {
-    color: "#f8fafc",
-  },
-  selectedKeyText: {
-    color: "#ffffff",
   },
 });

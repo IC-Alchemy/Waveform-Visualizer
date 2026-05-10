@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import type { AppTheme } from "../model/ui";
 
 interface Option<T extends string> {
   value: T;
@@ -9,11 +10,12 @@ interface SegmentedControlProps<T extends string> {
   options: Array<Option<T>>;
   value: T;
   onChange: (value: T) => void;
+  theme: AppTheme;
 }
 
-export function SegmentedControl<T extends string>({ options, value, onChange }: SegmentedControlProps<T>) {
+export function SegmentedControl<T extends string>({ options, value, onChange, theme }: SegmentedControlProps<T>) {
   return (
-    <View style={styles.group}>
+    <View style={[styles.group, { backgroundColor: theme.surfaceMuted }]}>
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -22,9 +24,13 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
             accessibilityState={{ selected }}
             key={option.value}
             onPress={() => onChange(option.value)}
-            style={[styles.button, selected && styles.selectedButton]}
+            style={[
+              styles.button,
+              selected && styles.selectedButton,
+              selected && { backgroundColor: theme.surfaceRaised, shadowColor: theme.shadow },
+            ]}
           >
-            <Text style={[styles.label, selected && styles.selectedLabel]}>{option.label}</Text>
+            <Text style={[styles.label, { color: selected ? theme.text : theme.textMuted }]}>{option.label}</Text>
           </Pressable>
         );
       })}
@@ -49,18 +55,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   selectedButton: {
-    backgroundColor: "#ffffff",
-    shadowColor: "#1d252f",
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
   },
   label: {
-    color: "#53606e",
     fontSize: 13,
     fontWeight: "700",
-  },
-  selectedLabel: {
-    color: "#0f1720",
   },
 });
