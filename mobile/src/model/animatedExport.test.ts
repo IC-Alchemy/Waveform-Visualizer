@@ -11,10 +11,10 @@ describe("animated export helpers", () => {
     expect(ANIMATED_EXPORT_DURATIONS).toEqual([3, 5, 10]);
   });
 
-  it("builds a conservative frame plan for mobile GIF export", () => {
-    expect(buildAnimatedExportPlan(3)).toMatchObject({ durationSeconds: 3, frameCount: 18, frameDelayMs: 167 });
-    expect(buildAnimatedExportPlan(5)).toMatchObject({ durationSeconds: 5, frameCount: 30, frameDelayMs: 167 });
-    expect(buildAnimatedExportPlan(10)).toMatchObject({ durationSeconds: 10, frameCount: 60, frameDelayMs: 167 });
+  it("builds a smoother frame plan for mobile GIF export", () => {
+    expect(buildAnimatedExportPlan(3)).toMatchObject({ durationSeconds: 3, frameRate: 24, frameCount: 72, frameDelayMs: 42 });
+    expect(buildAnimatedExportPlan(5)).toMatchObject({ durationSeconds: 5, frameRate: 24, frameCount: 120, frameDelayMs: 42 });
+    expect(buildAnimatedExportPlan(10)).toMatchObject({ durationSeconds: 10, frameRate: 24, frameCount: 240, frameDelayMs: 42 });
   });
 
   it("rejects unsupported durations", () => {

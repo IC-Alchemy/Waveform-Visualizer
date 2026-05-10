@@ -26,7 +26,7 @@ export interface AnimatedExportPlan {
   shareDialogTitle: string;
 }
 
-const ANDROID_SHARE_FRAME_RATE = 6;
+const ANDROID_SHARE_FRAME_RATE = 24;
 const GIF_MIME_TYPE = "image/gif";
 const GIF_EXTENSION = "gif";
 
