@@ -34,7 +34,7 @@ For a standalone APK, use the short-path Windows build flow described in `# Web 
 ## Controls
 
 - Oscillator X and Y: compact waveform/note selectors, frequency, amplitude, phase, and offset.
-- Phase Modulation: optional slow Y-phase cycling, with a `0.01 Hz` to `2 Hz` modulation-rate slider.
+- Phase Modulation: optional slow Y-phase cycling, with a `0.001 Hz` to `0.1 Hz` modulation-rate slider.
 - The top mode selector switches both oscillators between direct Hz, note selection, and interval mode.
 - Note mode uses per-oscillator C0-B8 note selectors; interval mode uses one shared interval control to relate the two oscillator notes.
 - Tuning supports equal temperament and just intonation for note and interval calculations; direct Hz mode stays unquantized.

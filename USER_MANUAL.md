@@ -195,7 +195,7 @@ Controls vertical size. At `0`, the trace collapses toward a horizontal line.
 
 Offsets the Y oscillator timing. The default Y phase is `90` degrees, which helps the default X/Y sine settings open into a rounder Lissajous figure.
 
-`Phase Modulation` adds a slow cyclic offset to Y phase while preserving the visible X and Y Phase sliders as base values. The Mod rate slider sets the cycle speed from `0.01 Hz` to `2 Hz`; lower values drift gradually, while higher values rotate the phase relationship quickly.
+`Phase Modulation` adds a slow cyclic offset to Y phase while preserving the visible X and Y Phase sliders as base values. The Mod rate slider sets the cycle speed from `0.001 Hz` to `0.1 Hz`, using the full slider width for slow drift control.
 
 #### Offset
 
@@ -315,8 +315,8 @@ The Renderer section shows live performance.
 
 1. Start from a circle, ellipse, or simple interval figure.
 2. Turn on `Phase Modulation`.
-3. Set Mod rate near `0.05 Hz` for a slow drift.
-4. Raise Mod rate toward `1 Hz` or `2 Hz` for faster cyclic rotation.
+3. Set Mod rate near `0.005 Hz` for a very slow drift.
+4. Raise Mod rate toward `0.05 Hz` or `0.1 Hz` for faster cyclic rotation.
 
 ### Create a Boxy Pattern
 

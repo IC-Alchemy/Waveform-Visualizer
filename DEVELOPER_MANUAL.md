@@ -112,7 +112,7 @@ The main mutable model is the `state` object.
 const state = {
   x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0, note: "A2" },
   y: { wave: 0, freq: 164.81377845643496, amp: 0.74, phase: 90, offset: 0, note: "E3" },
-  phaseMod: { enabled: false, rate: 0.1 },
+  phaseMod: { enabled: false, rate: 0.01 },
   tuning: { freqMode: "interval", interval: "perfectFifth", temperament: "equal", referenceFreq: 110 },
   persistence: 0.972,
   intensity: 0.32,
@@ -153,7 +153,7 @@ const state = {
 
 `phaseMod.enabled` controls whether the renderer adds a cyclic phase offset.
 
-`phaseMod.rate` stores modulation frequency in Hz and is clamped from `0.01` to `2`.
+`phaseMod.rate` stores modulation frequency in Hz and is clamped from `0.001` to `0.1`.
 
 The phase modulation control does not rewrite `state.x.phase` or `state.y.phase`; those remain the manual base phase values shown by the sliders.
 
@@ -452,7 +452,7 @@ After changing code, run through this checklist:
 6. Switch Mode to `Interval` and confirm interval changes affect Y relative to X.
 7. Switch between `Equal` and `Just` and confirm interval-derived frequencies change where expected.
 8. Test all four waveforms on both oscillators.
-9. Toggle Phase Modulation, confirm the phase relationship moves, and confirm the `0.01 Hz` to `2 Hz` Mod rate slider changes the speed.
+9. Toggle Phase Modulation, confirm the phase relationship moves, and confirm the `0.001 Hz` to `0.1 Hz` Mod rate slider changes the speed across the full slider travel.
 10. Open several `i` help popovers and confirm they position correctly without blocking the compact selectors.
 11. Adjust Persistence, Trace intensity, Focus, Trace antialias, Trace style, Phosphor color, Decay, Bloom, Trace window, and Samples/frame.
 12. Test Freeze and Resume, including that phase modulation pauses while frozen.

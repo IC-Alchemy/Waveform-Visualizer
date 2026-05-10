@@ -15,7 +15,7 @@
       --accent: #62ff9f;
       --amber: #ffc766;
       --control: #172326;
-      --control-height: 32px;
+      --control-height: 30px;
       --touch-control-height: 46px;
     }
 
@@ -319,7 +319,7 @@
     .helpAnchor,
     .labelTitle {
       display: inline-flex;
-      gap: 6px;
+      gap: 4px;
       align-items: center;
       min-width: 0;
     }
@@ -334,15 +334,15 @@
     .helpButton {
       display: inline-grid;
       place-items: center;
-      width: 17px;
-      height: 17px;
-      min-height: 17px;
+      width: 12px;
+      height: 12px;
+      min-height: 12px;
       padding: 0;
-      border-color: rgba(139, 255, 195, 0.34);
+      border-color: rgba(139, 255, 195, 0.24);
       border-radius: 50%;
-      background: rgba(98, 255, 159, 0.08);
-      color: var(--accent);
-      font-size: 11px;
+      background: rgba(98, 255, 159, 0.045);
+      color: rgba(98, 255, 159, 0.82);
+      font-size: 8px;
       font-weight: 800;
       line-height: 1;
       text-transform: none;
@@ -422,11 +422,12 @@
     select,
     button {
       width: 100%;
-      border: 1px solid rgba(139, 255, 195, 0.18);
+      border: 1px solid rgba(139, 255, 195, 0.16);
       border-radius: 6px;
-      background: var(--control);
+      background: linear-gradient(180deg, rgba(28, 43, 46, 0.96), rgba(18, 29, 32, 0.96));
       color: var(--text);
       min-height: var(--control-height);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
     }
 
     input[type="number"] {
@@ -435,7 +436,8 @@
     }
 
     select {
-      padding: 0 28px 0 9px;
+      padding: 0 24px 0 9px;
+      color: #ecfff6;
     }
 
     input[type="color"] {
@@ -525,7 +527,7 @@
     .compactGrid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6px;
+      gap: 7px;
       margin: 6px 0;
     }
 
@@ -540,11 +542,11 @@
     .segmented {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 4px;
+      gap: 3px;
       padding: 3px;
-      border: 1px solid rgba(139, 255, 195, 0.18);
+      border: 1px solid rgba(139, 255, 195, 0.14);
       border-radius: 6px;
-      background: rgba(0, 0, 0, 0.22);
+      background: rgba(0, 0, 0, 0.18);
     }
 
     .segmented button {
@@ -556,21 +558,21 @@
     }
 
     .segmented button[aria-pressed="true"] {
-      background: var(--control);
+      background: linear-gradient(180deg, rgba(41, 62, 65, 0.96), rgba(23, 35, 38, 0.96));
       color: var(--text);
-      border-color: rgba(98, 255, 159, 0.42);
+      border-color: rgba(98, 255, 159, 0.34);
     }
 
     .phaseModPanel {
       display: grid;
       grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
-      gap: 8px;
+      gap: 10px;
       align-items: end;
-      margin: 6px 0;
-      padding: 8px;
-      border: 1px solid rgba(139, 255, 195, 0.16);
+      margin: 8px 0 6px;
+      padding: 7px 8px;
+      border: 1px solid rgba(139, 255, 195, 0.13);
       border-radius: 6px;
-      background: rgba(0, 0, 0, 0.18);
+      background: linear-gradient(180deg, rgba(98, 255, 159, 0.055), rgba(0, 0, 0, 0.13));
     }
 
     .switchControl {
@@ -579,7 +581,7 @@
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 8px;
       align-items: center;
-      min-height: 34px;
+      min-height: 30px;
       margin: 0;
       cursor: pointer;
     }
@@ -587,10 +589,10 @@
     .switchInline {
       display: inline-grid;
       grid-template-columns: auto auto;
-      gap: 8px;
+      gap: 7px;
       align-items: center;
       color: #e8fff3;
-      font-size: 11px;
+      font-size: 10px;
       font-variant-numeric: tabular-nums;
     }
 
@@ -607,9 +609,9 @@
     .switchTrack {
       position: relative;
       display: inline-block;
-      width: 36px;
-      height: 20px;
-      border: 1px solid rgba(139, 255, 195, 0.3);
+      width: 32px;
+      height: 18px;
+      border: 1px solid rgba(139, 255, 195, 0.26);
       border-radius: 999px;
       background: rgba(0, 0, 0, 0.32);
       transition: border-color 160ms ease, background 160ms ease;
@@ -619,8 +621,8 @@
       position: absolute;
       left: 3px;
       top: 3px;
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: var(--muted);
       transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
@@ -632,7 +634,7 @@
     }
 
     .switchControl input:checked + .switchTrack .switchThumb {
-      transform: translateX(16px);
+      transform: translateX(14px);
       background: var(--accent);
       box-shadow: 0 0 12px rgba(98, 255, 159, 0.72);
     }
@@ -647,7 +649,7 @@
     }
 
     .phaseModRate input[type="range"] {
-      height: 20px;
+      height: 18px;
     }
 
     .phaseModPanel[data-enabled="false"] .phaseModRate {
@@ -812,10 +814,10 @@
       }
 
       .helpButton {
-        width: 28px;
-        height: 28px;
-        min-height: 28px;
-        font-size: 12px;
+        width: 16px;
+        height: 16px;
+        min-height: 16px;
+        font-size: 9px;
       }
 
       .tipBubble {
@@ -1007,7 +1009,7 @@
         </label>
         <label class="miniControl phaseModRate" data-help-key="phaseModRate">
           <span class="row"><span>Mod rate</span><output id="phaseModRateOut"></output></span>
-          <input id="phaseModRate" type="range" min="0.01" max="2" step="0.01" value="0.10" aria-label="Phase modulation frequency in Hertz">
+          <input id="phaseModRate" type="range" min="0.001" max="0.1" step="0.001" value="0.010" aria-label="Phase modulation frequency in Hertz">
         </label>
       </div>
       <label data-help-key="offsetY">
@@ -1117,7 +1119,7 @@
       const state = {
         x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0, note: "A2" },
         y: { wave: 0, freq: 164.81377845643496, amp: 0.74, phase: 90, offset: 0, note: "E3" },
-        phaseMod: { enabled: false, rate: 0.001 },
+        phaseMod: { enabled: false, rate: 0.01 },
         tuning: { freqMode: "interval", interval: "perfectFifth", temperament: "equal", referenceFreq: 110 },
         persistence: 0.672,
         intensity: 0.32,
@@ -1137,8 +1139,8 @@
       const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
       const JUST_NOTE_RATIOS = [1, 16 / 15, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 45 / 32, 3 / 2, 8 / 5, 5 / 3, 9 / 5, 15 / 8];
       const C4_EQUAL_FREQ = 440 * Math.pow(2, -9 / 12);
-      const PHASE_MOD_MIN = 0.0001;
-      const PHASE_MOD_MAX = .1;
+      const PHASE_MOD_MIN = 0.001;
+      const PHASE_MOD_MAX = 0.1;
       const INTERVALS = [
         { value: "unison", label: "Unison", semitones: 0, just: 1 },
         { value: "minorSecond", label: "Minor second", semitones: 1, just: 16 / 15 },
@@ -1236,7 +1238,7 @@
         },
         phaseModRate: {
           title: "Mod rate",
-          text: "Sets how many phase cycles happen per second when Phase Modulation is on. Low values drift slowly; 2 Hz makes the phase relationship rotate quickly."
+          text: "Sets how many phase cycles happen per second when Phase Modulation is on. The full slider covers 0.001 to 0.1 Hz for slow, usable drift control."
         },
         offsetY: {
           title: "Y offset",
@@ -1553,6 +1555,7 @@
       gl.disable(gl.DEPTH_TEST);
       gl.disable(gl.CULL_FACE);
 
+      // Reinitialize a framebuffer-backed texture at a new size and attach it to the target FBO.
       function configureTexture(target, targetWidth, targetHeight) {
         gl.bindTexture(gl.TEXTURE_2D, target.tex);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -1564,6 +1567,7 @@
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.tex, 0);
       }
 
+      // Clear each offscreen render target so resize/export paths start from a clean frame.
       function clearTargets(targets) {
         for (const target of targets) {
           gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
@@ -1572,6 +1576,7 @@
         }
       }
 
+      // Keep the canvas, bloom buffers, and viewport aligned with the CSS pixel size and DPR.
       function resize() {
         const dpr = renderPixelRatio();
         const nextWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr));
@@ -1598,8 +1603,10 @@
       const oscControls = { x: null, y: null };
       const presentationControls = { x: null, y: null };
 
+      // Wire up the inline help icons and keep their tooltips positioned and mutually exclusive.
       function setupHelpTips() {
         const tips = [];
+        // Close every open tip except the one explicitly left active.
         const closeAll = except => {
           for (const tip of tips) {
             if (tip !== except) {
@@ -1609,6 +1616,7 @@
           }
         };
 
+        // Place a tooltip bubble near its button while keeping it inside the viewport.
         const positionBubble = (button, bubble) => {
           const margin = 17;
           const buttonRect = button.getBoundingClientRect();
@@ -1630,6 +1638,7 @@
           bubble.style.top = `${top}px`;
         };
 
+        // Find the text label that should host the help button for this control row.
         const findHelpAnchor = control => {
           const rowTitle = control.querySelector(".row > span:first-child");
           if (rowTitle) {
@@ -1663,6 +1672,7 @@
           const title = document.createElement("strong");
           const text = document.createElement("span");
 
+          // Replace the anchor label with a compact help affordance and the associated tooltip bubble.
           anchor.classList.add("helpAnchor");
           wrap.className = "tipWrap";
           wrap.dataset.open = "false";
@@ -1684,6 +1694,7 @@
           const tip = { wrap, button };
           tips.push(tip);
 
+          // Toggle a single tooltip at a time and recompute its position when opened.
           button.addEventListener("click", event => {
             event.preventDefault();
             event.stopPropagation();
@@ -1697,6 +1708,7 @@
           });
         }
 
+        // Any outside interaction should dismiss help overlays so they do not linger on screen.
         document.addEventListener("click", () => closeAll(null));
         document.addEventListener("keydown", event => {
           if (event.key === "Escape") {
@@ -1707,6 +1719,7 @@
         document.querySelector("aside").addEventListener("scroll", () => closeAll(null), { passive: true });
       }
 
+      // Clamp frequency input to the configured range, or fall back to the previous valid value.
       function clampFrequency(value, fallback) {
         if (!Number.isFinite(value)) {
           return fallback;
@@ -1714,6 +1727,7 @@
         return Math.min(FREQ_MAX, Math.max(FREQ_MIN, value));
       }
 
+      // Clamp phase-modulation rate input to the configured range, or fall back to the previous valid value.
       function clampPhaseModRate(value, fallback) {
         if (!Number.isFinite(value)) {
           return fallback;
@@ -1721,6 +1735,7 @@
         return Math.min(PHASE_MOD_MAX, Math.max(PHASE_MOD_MIN, value));
       }
 
+      // Format control values for the readouts shown next to the sliders and numeric inputs.
       function formatParam(param, value) {
         if (param === "freq") return `${value.toFixed(2)} Hz`;
         if (param === "phase") return `${value.toFixed(1)} deg`;
@@ -1728,7 +1743,7 @@
       }
 
       function formatPhaseModRate(value) {
-        return `${value.toFixed(2)} Hz`;
+        return `${value.toFixed(3)} Hz`;
       }
 
       function noteFrequency(note) {
