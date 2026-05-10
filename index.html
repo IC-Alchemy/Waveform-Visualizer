@@ -290,6 +290,10 @@
       content: "-";
     }
 
+    .choiceGrid {
+      align-items: end;
+    }
+
     .displayControls {
       padding-top: 8px;
     }
@@ -557,6 +561,103 @@
       border-color: rgba(98, 255, 159, 0.42);
     }
 
+    .phaseModPanel {
+      display: grid;
+      grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
+      gap: 8px;
+      align-items: end;
+      margin: 6px 0;
+      padding: 8px;
+      border: 1px solid rgba(139, 255, 195, 0.16);
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .switchControl {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      min-height: 34px;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .switchInline {
+      display: inline-grid;
+      grid-template-columns: auto auto;
+      gap: 8px;
+      align-items: center;
+      color: #e8fff3;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .switchControl input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .switchTrack {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      border: 1px solid rgba(139, 255, 195, 0.3);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.32);
+      transition: border-color 160ms ease, background 160ms ease;
+    }
+
+    .switchThumb {
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .switchControl input:checked + .switchTrack {
+      border-color: rgba(98, 255, 159, 0.76);
+      background: rgba(98, 255, 159, 0.18);
+    }
+
+    .switchControl input:checked + .switchTrack .switchThumb {
+      transform: translateX(16px);
+      background: var(--accent);
+      box-shadow: 0 0 12px rgba(98, 255, 159, 0.72);
+    }
+
+    .switchControl:focus-within .switchTrack {
+      outline: 2px solid rgba(98, 255, 159, 0.72);
+      outline-offset: 2px;
+    }
+
+    .phaseModRate {
+      margin: 0;
+    }
+
+    .phaseModRate input[type="range"] {
+      height: 20px;
+    }
+
+    .phaseModPanel[data-enabled="false"] .phaseModRate {
+      opacity: 0.56;
+    }
+
+    .phaseModPanel[data-enabled="false"] .phaseModRate input {
+      cursor: not-allowed;
+    }
+
     .freqNumber {
       margin-top: 2px;
     }
@@ -680,6 +781,34 @@
       .segmented button {
         min-height: 38px;
         font-size: 13px;
+      }
+
+      .phaseModPanel {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 10px;
+      }
+
+      .switchControl {
+        min-height: 44px;
+      }
+
+      .switchInline {
+        font-size: 13px;
+      }
+
+      .switchTrack {
+        width: 46px;
+        height: 26px;
+      }
+
+      .switchThumb {
+        width: 18px;
+        height: 18px;
+      }
+
+      .switchControl input:checked + .switchTrack .switchThumb {
+        transform: translateX(20px);
       }
 
       .helpButton {
@@ -808,24 +937,24 @@
 
     <section class="section" data-osc="x">
       <h2>Oscillator X <span>horizontal</span></h2>
-      <label data-help-key="waveX">Waveform
-        <select data-param="wave">
-          <option value="0">Sine</option>
-          <option value="1">Triangle</option>
-          <option value="2">Soft square</option>
-          <option value="3">Saw</option>
-        </select>
-      </label>
+      <div class="compactGrid choiceGrid">
+        <label data-help-key="waveX">Waveform
+          <select data-param="wave">
+            <option value="0">Sine</option>
+            <option value="1">Triangle</option>
+            <option value="2">Soft square</option>
+            <option value="3">Saw</option>
+          </select>
+        </label>
+        <label data-help-key="noteX">Note
+          <select data-param="note"></select>
+        </label>
+      </div>
       <label data-help-key="freqX">
         <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
         <input class="freqNumber" type="number" inputmode="decimal" enterkeyhint="done" min="0.1" max="520" step="0.01" value="110" data-param="freqNumber" aria-label="Oscillator X frequency in Hz">
         <input type="range" min="0.1" max="520" step="0.01" value="110" data-param="freq">
       </label>
-      <div class="compactGrid">
-        <label data-help-key="noteX">Note
-          <select data-param="note"></select>
-        </label>
-      </div>
       <label data-help-key="ampX">
         <span class="row"><span>Amplitude</span><output data-out="amp"></output></span>
         <input type="range" min="0" max="1" step="0.001" value="0.74" data-param="amp">
@@ -842,24 +971,24 @@
 
     <section class="section" data-osc="y">
       <h2>Oscillator Y <span>vertical</span></h2>
-      <label data-help-key="waveY">Waveform
-        <select data-param="wave">
-          <option value="0">Sine</option>
-          <option value="1">Triangle</option>
-          <option value="2">Soft square</option>
-          <option value="3">Saw</option>
-        </select>
-      </label>
+      <div class="compactGrid choiceGrid">
+        <label data-help-key="waveY">Waveform
+          <select data-param="wave">
+            <option value="0">Sine</option>
+            <option value="1">Triangle</option>
+            <option value="2">Soft square</option>
+            <option value="3">Saw</option>
+          </select>
+        </label>
+        <label data-help-key="noteY">Note
+          <select data-param="note"></select>
+        </label>
+      </div>
       <label data-help-key="freqY">
         <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
         <input class="freqNumber" type="number" inputmode="decimal" enterkeyhint="done" min="0.1" max="520" step="0.01" value="165" data-param="freqNumber" aria-label="Oscillator Y frequency in Hz">
         <input type="range" min="0.1" max="520" step="0.01" value="165" data-param="freq">
       </label>
-      <div class="compactGrid">
-        <label data-help-key="noteY">Note
-          <select data-param="note"></select>
-        </label>
-      </div>
       <label data-help-key="ampY">
         <span class="row"><span>Amplitude</span><output data-out="amp"></output></span>
         <input type="range" min="0" max="1" step="0.001" value="0.74" data-param="amp">
@@ -868,6 +997,19 @@
         <span class="row"><span>Phase</span><output data-out="phase"></output></span>
         <input type="range" min="-180" max="180" step="0.1" value="90" data-param="phase">
       </label>
+      <div class="phaseModPanel" data-enabled="false">
+        <label class="switchControl" data-help-key="phaseMod">Phase Modulation
+          <span class="switchInline">
+            <span id="phaseModState">Off</span>
+            <input id="phaseModEnabled" type="checkbox" aria-label="Enable phase modulation">
+            <span class="switchTrack" aria-hidden="true"><span class="switchThumb"></span></span>
+          </span>
+        </label>
+        <label class="miniControl phaseModRate" data-help-key="phaseModRate">
+          <span class="row"><span>Mod rate</span><output id="phaseModRateOut"></output></span>
+          <input id="phaseModRate" type="range" min="0.01" max="2" step="0.01" value="0.10" aria-label="Phase modulation frequency in Hertz">
+        </label>
+      </div>
       <label data-help-key="offsetY">
         <span class="row"><span>Offset</span><output data-out="offset"></output></span>
         <input type="range" min="-0.9" max="0.9" step="0.001" value="0" data-param="offset">
@@ -975,14 +1117,15 @@
       const state = {
         x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0, note: "A2" },
         y: { wave: 0, freq: 164.81377845643496, amp: 0.74, phase: 90, offset: 0, note: "E3" },
+        phaseMod: { enabled: false, rate: 0.001 },
         tuning: { freqMode: "interval", interval: "perfectFifth", temperament: "equal", referenceFreq: 110 },
-        persistence: 0.972,
+        persistence: 0.672,
         intensity: 0.32,
         focus: 2.4,
         traceAntialias: 0.54,
         traceStyle: "hybrid",
         phosphorColor: [0.36, 1.0, 0.62],
-        decay: 0.96,
+        decay: 0.76,
         bloom: 0.82,
         window: 0.032,
         samples: 8192,
@@ -994,6 +1137,8 @@
       const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
       const JUST_NOTE_RATIOS = [1, 16 / 15, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 45 / 32, 3 / 2, 8 / 5, 5 / 3, 9 / 5, 15 / 8];
       const C4_EQUAL_FREQ = 440 * Math.pow(2, -9 / 12);
+      const PHASE_MOD_MIN = 0.0001;
+      const PHASE_MOD_MAX = .1;
       const INTERVALS = [
         { value: "unison", label: "Unison", semitones: 0, just: 1 },
         { value: "minorSecond", label: "Minor second", semitones: 1, just: 16 / 15 },
@@ -1084,6 +1229,14 @@
         phaseY: {
           title: "Y phase",
           text: "Offsets vertical timing from -180 to 180 degrees. The default 90 degree Y phase opens the starting sine pattern into a rounder Lissajous figure."
+        },
+        phaseMod: {
+          title: "Phase modulation",
+          text: "Adds a slow cyclic offset to Y phase while leaving both phase sliders as the manual base values. Off keeps the oscilloscope exactly static."
+        },
+        phaseModRate: {
+          title: "Mod rate",
+          text: "Sets how many phase cycles happen per second when Phase Modulation is on. Low values drift slowly; 2 Hz makes the phase relationship rotate quickly."
         },
         offsetY: {
           title: "Y offset",
@@ -1561,10 +1714,21 @@
         return Math.min(FREQ_MAX, Math.max(FREQ_MIN, value));
       }
 
+      function clampPhaseModRate(value, fallback) {
+        if (!Number.isFinite(value)) {
+          return fallback;
+        }
+        return Math.min(PHASE_MOD_MAX, Math.max(PHASE_MOD_MIN, value));
+      }
+
       function formatParam(param, value) {
         if (param === "freq") return `${value.toFixed(2)} Hz`;
         if (param === "phase") return `${value.toFixed(1)} deg`;
         return value.toFixed(3);
+      }
+
+      function formatPhaseModRate(value) {
+        return `${value.toFixed(2)} Hz`;
       }
 
       function noteFrequency(note) {
@@ -1723,6 +1887,43 @@
         };
         input.addEventListener("input", update, { passive: true });
         update();
+      }
+
+      function syncPhaseModControls() {
+        const panel = document.querySelector(".phaseModPanel");
+        const enabled = document.getElementById("phaseModEnabled");
+        const stateText = document.getElementById("phaseModState");
+        const rate = document.getElementById("phaseModRate");
+        const rateOut = document.getElementById("phaseModRateOut");
+        enabled.checked = state.phaseMod.enabled;
+        stateText.textContent = state.phaseMod.enabled ? "On" : "Off";
+        rate.disabled = !state.phaseMod.enabled;
+        rate.value = String(state.phaseMod.rate);
+        rateOut.textContent = formatPhaseModRate(state.phaseMod.rate);
+        panel.dataset.enabled = String(state.phaseMod.enabled);
+      }
+
+      function wirePhaseMod() {
+        const control = document.querySelector(".switchControl");
+        const enabled = document.getElementById("phaseModEnabled");
+        const rate = document.getElementById("phaseModRate");
+        control.addEventListener("click", event => {
+          if (event.target === enabled || event.target.closest(".helpButton")) {
+            return;
+          }
+          event.preventDefault();
+          state.phaseMod.enabled = !state.phaseMod.enabled;
+          syncPhaseModControls();
+        });
+        enabled.addEventListener("change", () => {
+          state.phaseMod.enabled = enabled.checked;
+          syncPhaseModControls();
+        });
+        rate.addEventListener("input", () => {
+          state.phaseMod.rate = clampPhaseModRate(rate.valueAsNumber, state.phaseMod.rate);
+          syncPhaseModControls();
+        }, { passive: true });
+        syncPhaseModControls();
       }
 
       function hexToRgb(hex) {
@@ -1938,6 +2139,7 @@
       wireOsc(document.querySelector("[data-osc='x']"), "x");
       wireOsc(document.querySelector("[data-osc='y']"), "y");
       wireTuning();
+      wirePhaseMod();
       wirePresentationControls();
       wireDisplay();
       syncFreezeButtons();
@@ -1951,12 +2153,13 @@
       const exportStatus = document.getElementById("exportStatus");
 
       function setTraceUniforms(programLoc, sampleCount, pointSize, time, intensityScale = 1) {
+        const phaseModOffset = state.phaseMod.enabled ? (time * state.phaseMod.rate * 360) % 360 : 0;
         gl.uniform1f(programLoc.time, time);
         gl.uniform1f(programLoc.traceWindow, state.window);
         gl.uniform1f(programLoc.sampleCount, sampleCount);
         gl.uniform1f(programLoc.pointSize, pointSize);
         gl.uniform4f(programLoc.oscX, state.x.freq, state.x.amp, state.x.phase, state.x.offset);
-        gl.uniform4f(programLoc.oscY, state.y.freq, state.y.amp, state.y.phase, state.y.offset);
+        gl.uniform4f(programLoc.oscY, state.y.freq, state.y.amp, state.y.phase + phaseModOffset, state.y.offset);
         gl.uniform1i(programLoc.waveX, state.x.wave);
         gl.uniform1i(programLoc.waveY, state.y.wave);
         gl.uniform1f(programLoc.intensity, state.intensity * intensityScale);

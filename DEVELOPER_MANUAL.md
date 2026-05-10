@@ -112,6 +112,7 @@ The main mutable model is the `state` object.
 const state = {
   x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0, note: "A2" },
   y: { wave: 0, freq: 164.81377845643496, amp: 0.74, phase: 90, offset: 0, note: "E3" },
+  phaseMod: { enabled: false, rate: 0.1 },
   tuning: { freqMode: "interval", interval: "perfectFifth", temperament: "equal", referenceFreq: 110 },
   persistence: 0.972,
   intensity: 0.32,
@@ -147,6 +148,14 @@ const state = {
 `offset` shifts the generated coordinate along that axis.
 
 `note` stores the selected musical note for note and interval modes.
+
+### Phase Modulation Fields
+
+`phaseMod.enabled` controls whether the renderer adds a cyclic phase offset.
+
+`phaseMod.rate` stores modulation frequency in Hz and is clamped from `0.01` to `2`.
+
+The phase modulation control does not rewrite `state.x.phase` or `state.y.phase`; those remain the manual base phase values shown by the sliders.
 
 ### Tuning Fields
 
@@ -237,6 +246,10 @@ It handles:
 Frequency edits switch the global mode back to `hz`. Note edits switch the global mode to `note` and apply note-derived frequencies.
 
 `oscControls` stores important DOM references for X and Y.
+
+Waveform and Note selects are grouped visually in compact two-column rows, but they still use the same `data-param` attributes and synchronization paths.
+
+`wirePhaseMod()` wires the global Phase Modulation checkbox and modulation-rate slider. It updates `state.phaseMod`, disables the rate slider while modulation is off, and refreshes the visible on/off and Hz readouts.
 
 ### Tuning Controls
 
@@ -345,6 +358,8 @@ Important uniforms:
 frequency, amplitude, phase, offset
 ```
 
+When Phase Modulation is enabled, `setTraceUniforms()` uploads `state.y.phase + phaseModOffset` for `uOscY.z`. The stored Y phase slider remains unchanged; `phaseModOffset` is derived from `simTime`, so Freeze also pauses modulation and PNG export captures the current animated phase.
+
 The shader clamps output coordinates slightly beyond normalized device coordinates:
 
 ```glsl
@@ -437,13 +452,15 @@ After changing code, run through this checklist:
 6. Switch Mode to `Interval` and confirm interval changes affect Y relative to X.
 7. Switch between `Equal` and `Just` and confirm interval-derived frequencies change where expected.
 8. Test all four waveforms on both oscillators.
-9. Adjust Persistence, Trace intensity, Focus, Trace antialias, Trace style, Phosphor color, Decay, Bloom, Trace window, and Samples/frame.
-10. Test Freeze and Resume.
-11. Resize the browser and confirm the canvas remains sharp and fills the stage.
-12. Toggle Presentation mode and confirm the WebGL waveform becomes the centerpiece while compact frequency and amplitude controls still update both oscillators.
-13. Toggle back to normal mode and confirm the smaller always-visible waveform and full parameter controls return with synchronized values.
-14. Save a PNG at default export quality and confirm a non-empty download.
-15. Test a narrow viewport to confirm the control panel moves below the display without horizontal overflow.
+9. Toggle Phase Modulation, confirm the phase relationship moves, and confirm the `0.01 Hz` to `2 Hz` Mod rate slider changes the speed.
+10. Open several `i` help popovers and confirm they position correctly without blocking the compact selectors.
+11. Adjust Persistence, Trace intensity, Focus, Trace antialias, Trace style, Phosphor color, Decay, Bloom, Trace window, and Samples/frame.
+12. Test Freeze and Resume, including that phase modulation pauses while frozen.
+13. Resize the browser and confirm the canvas remains sharp and fills the stage.
+14. Toggle Presentation mode and confirm the WebGL waveform becomes the centerpiece while compact frequency and amplitude controls still update both oscillators.
+15. Toggle back to normal mode and confirm the smaller always-visible waveform and full parameter controls return with synchronized values.
+16. Save a PNG at default export quality and confirm a non-empty download.
+17. Test a narrow viewport to confirm the control panel moves below the display without horizontal overflow.
 
 ## Suggested Automated Tests
 

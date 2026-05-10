@@ -68,6 +68,8 @@ Normal mode keeps the waveform visible in a smaller always-on scope area and sho
 
 In normal mode, the main control panel contains the full control set. On small screens, this panel moves below the display.
 
+Waveform and Note selectors are grouped together to save vertical space. Small `i` buttons beside labels open short help popovers for the current control.
+
 In Presentation mode, the compact controls are intentionally limited to frequent live adjustments. Switch back to normal mode when you need note, interval, temperament, waveform, phase, offset, display, renderer, freeze, or export controls.
 
 On Android, the same controls are arranged as stacked touch sections below the live visualizer. Select-style controls open native modal lists, sliders include typed numeric entry, and PNG export opens the Android share sheet instead of downloading a file.
@@ -159,6 +161,8 @@ At `0`, the X oscillator has no horizontal movement and the trace collapses towa
 
 Phase changes the relationship between X and Y. A sine wave at the same frequency on both axes can become a diagonal line, ellipse, or circle depending on phase.
 
+Phase Modulation is controlled beside the Y phase area because it changes the phase relationship between the two axes. When it is off, both phase sliders behave as fixed manual offsets.
+
 #### Offset
 
 `Offset` moves the X oscillator left or right.
@@ -190,6 +194,8 @@ Controls vertical size. At `0`, the trace collapses toward a horizontal line.
 #### Phase
 
 Offsets the Y oscillator timing. The default Y phase is `90` degrees, which helps the default X/Y sine settings open into a rounder Lissajous figure.
+
+`Phase Modulation` adds a slow cyclic offset to Y phase while preserving the visible X and Y Phase sliders as base values. The Mod rate slider sets the cycle speed from `0.01 Hz` to `2 Hz`; lower values drift gradually, while higher values rotate the phase relationship quickly.
 
 #### Offset
 
@@ -304,6 +310,13 @@ The Renderer section shows live performance.
 2. Choose X Note, such as `A2`.
 3. Choose an Interval, such as `Perfect fifth` or `Octave`.
 4. Switch between `Equal` and `Just` temperament and compare how stable the pattern looks.
+
+### Animate the Phase Relationship
+
+1. Start from a circle, ellipse, or simple interval figure.
+2. Turn on `Phase Modulation`.
+3. Set Mod rate near `0.05 Hz` for a slow drift.
+4. Raise Mod rate toward `1 Hz` or `2 Hz` for faster cyclic rotation.
 
 ### Create a Boxy Pattern
 
