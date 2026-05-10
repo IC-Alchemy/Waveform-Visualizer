@@ -46,7 +46,7 @@ For a user-installable APK, follow the short-path `assembleRelease` workflow in 
 
 ## Main Display
 
-The large left area is the oscilloscope display.
+The oscilloscope display is a live WebGL waveform canvas.
 
 - The bright green trace is the current XY oscillator path.
 - The grid gives visual scale and center reference.
@@ -56,9 +56,19 @@ The large left area is the oscilloscope display.
 
 The app is visual only. It does not currently output audio.
 
+## Layout Modes
+
+The app has two UI layouts for the same oscillator and renderer state.
+
+`Presentation` mode makes the WebGL waveform canvas the centerpiece. It is intended for viewing, recording, or demonstrating patterns while still exposing small essential controls for X/Y frequency and amplitude.
+
+Normal mode keeps the waveform visible in a smaller always-on scope area and shows the denser full control set for tuning, oscillator shape, phase, offset, display style, renderer settings, freeze/resume, and PNG export.
+
 ## Control Panel
 
-The right panel contains all controls. On small screens, this panel moves below the display.
+In normal mode, the main control panel contains the full control set. On small screens, this panel moves below the display.
+
+In Presentation mode, the compact controls are intentionally limited to frequent live adjustments. Switch back to normal mode when you need note, interval, temperament, waveform, phase, offset, display, renderer, freeze, or export controls.
 
 On Android, the same controls are arranged as stacked touch sections below the live visualizer. Select-style controls open native modal lists, sliders include typed numeric entry, and PNG export opens the Android share sheet instead of downloading a file.
 

@@ -89,7 +89,7 @@ If WebGL2 is unavailable, the app replaces the document body with a short error 
 The file has four major layers:
 
 - HTML markup defines the canvas, readouts, and right-side control panel.
-- CSS defines the dark oscilloscope layout, responsive panel behavior, control styling, and scope surface.
+- CSS defines the dark oscilloscope layout, presentation and normal mode sizing, responsive panel behavior, control styling, and scope surface.
 - JavaScript state and UI wiring keep controls synchronized with the oscillator model.
 - WebGL2 shaders and render loop generate, accumulate, and present the trace.
 
@@ -160,6 +160,8 @@ const state = {
 
 ### Display Fields
 
+Presentation mode is a UI layout flag, not a separate oscillator or renderer model. It should reuse the same `state` values as normal mode so compact frequency and amplitude controls stay synchronized with the full controls and the WebGL render loop.
+
 `persistence` controls fade strength in the framebuffer fade pass.
 
 `intensity` controls trace brightness in the trace fragment shader.
@@ -215,6 +217,8 @@ Important functions:
 ## UI Wiring
 
 The app uses DOM IDs and `data-*` attributes instead of a framework.
+
+Presentation mode should be wired as a layout toggle over the existing state model. The compact frequency and amplitude controls must call the same setters or synchronization paths as the full oscillator controls, so changing a value in one layout immediately updates the other layout and the renderer. Normal mode remains the full editing surface with the smaller always-visible waveform and the complete tuning, oscillator, display, renderer, freeze, and export controls.
 
 ### Oscillator Controls
 
@@ -436,8 +440,10 @@ After changing code, run through this checklist:
 9. Adjust Persistence, Trace intensity, Focus, Trace antialias, Trace style, Phosphor color, Decay, Bloom, Trace window, and Samples/frame.
 10. Test Freeze and Resume.
 11. Resize the browser and confirm the canvas remains sharp and fills the stage.
-12. Save a PNG at default export quality and confirm a non-empty download.
-13. Test a narrow viewport to confirm the control panel moves below the display.
+12. Toggle Presentation mode and confirm the WebGL waveform becomes the centerpiece while compact frequency and amplitude controls still update both oscillators.
+13. Toggle back to normal mode and confirm the smaller always-visible waveform and full parameter controls return with synchronized values.
+14. Save a PNG at default export quality and confirm a non-empty download.
+15. Test a narrow viewport to confirm the control panel moves below the display without horizontal overflow.
 
 ## Suggested Automated Tests
 

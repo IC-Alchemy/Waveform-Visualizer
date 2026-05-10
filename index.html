@@ -15,7 +15,7 @@
       --accent: #62ff9f;
       --amber: #ffc766;
       --control: #172326;
-      --control-height: 38px;
+      --control-height: 32px;
       --touch-control-height: 46px;
     }
 
@@ -40,8 +40,12 @@
 
     body {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 360px;
+      grid-template-columns: minmax(360px, 62vw) minmax(340px, 1fr);
       height: 100dvh;
+    }
+
+    body.presentation {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     #scopeStage {
@@ -63,6 +67,10 @@
       cursor: crosshair;
       touch-action: none;
       user-select: none;
+    }
+
+    body.presentation aside {
+      display: none;
     }
 
     .scope-label {
@@ -100,6 +108,84 @@
       pointer-events: none;
     }
 
+    .presentationControls {
+      position: absolute;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      z-index: 5;
+      display: none;
+      width: min(760px, calc(100% - 32px));
+      transform: translateX(-50%);
+      grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid rgba(139, 255, 195, 0.2);
+      border-radius: 8px;
+      background: rgba(7, 14, 15, 0.82);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(14px);
+    }
+
+    body.presentation .presentationControls {
+      display: grid;
+    }
+
+    .presentationControls button {
+      min-height: 30px;
+      white-space: nowrap;
+    }
+
+    .presentationGroup {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .miniControl {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+      margin: 0;
+      color: rgba(216, 238, 232, 0.82);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .miniControl .row {
+      gap: 8px;
+    }
+
+    .miniControl output {
+      min-width: 52px;
+      font-size: 10px;
+    }
+
+    .miniControl input[type="range"] {
+      height: 20px;
+    }
+
+    .miniControl input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px;
+    }
+
+    .miniControl input[type="range"]::-webkit-slider-thumb {
+      width: 16px;
+      height: 16px;
+      margin-top: -7px;
+    }
+
+    .miniControl input[type="range"]::-moz-range-track {
+      height: 4px;
+    }
+
+    .miniControl input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+    }
+
     aside {
       min-width: 0;
       height: 100vh;
@@ -109,26 +195,26 @@
       border-left: 1px solid rgba(111, 255, 178, 0.15);
       background: linear-gradient(180deg, var(--panel), var(--panel-2));
       box-shadow: -18px 0 48px rgba(0, 0, 0, 0.42);
-      padding: 18px;
+      padding: 14px;
       -webkit-overflow-scrolling: touch;
     }
 
     h1 {
       margin: 0 0 4px;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 650;
     }
 
     .subhead {
-      margin: 0 0 18px;
+      margin: 0 0 12px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.35;
     }
 
     .section {
       border-top: 1px solid rgba(143, 255, 198, 0.13);
-      padding: 16px 0;
+      padding: 12px 0;
     }
 
     .section:first-of-type {
@@ -140,9 +226,9 @@
       display: flex;
       align-items: baseline;
       justify-content: space-between;
-      margin: 0 0 12px;
+      margin: 0 0 8px;
       color: #f3fff8;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
     }
@@ -205,7 +291,25 @@
     }
 
     .displayControls {
-      padding-top: 12px;
+      padding-top: 8px;
+    }
+
+    .modeBar {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+
+    body.presentation #presentationToggle {
+      display: none;
+    }
+
+    #presentationToggle {
+      min-height: 34px;
+      border-color: rgba(98, 255, 159, 0.36);
+      background: rgba(98, 255, 159, 0.1);
+      color: #effff5;
     }
 
     .helpAnchor,
@@ -282,10 +386,10 @@
     label,
     .controlLabel {
       display: grid;
-      gap: 6px;
-      margin: 12px 0;
+      gap: 4px;
+      margin: 8px 0;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
     }
 
@@ -322,12 +426,12 @@
     }
 
     input[type="number"] {
-      padding: 0 9px;
+      padding: 0 8px;
       font-variant-numeric: tabular-nums;
     }
 
     select {
-      padding: 0 32px 0 10px;
+      padding: 0 28px 0 9px;
     }
 
     input[type="color"] {
@@ -364,7 +468,7 @@
       appearance: none;
       -webkit-appearance: none;
       width: 100%;
-      height: 32px;
+      height: 26px;
       border: 0;
       background: transparent;
       accent-color: var(--accent);
@@ -380,9 +484,9 @@
 
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 24px;
-      height: 24px;
-      margin-top: -10px;
+      width: 20px;
+      height: 20px;
+      margin-top: -8px;
       border: 2px solid rgba(7, 16, 17, 0.96);
       border-radius: 50%;
       background: var(--accent);
@@ -397,8 +501,8 @@
     }
 
     input[type="range"]::-moz-range-thumb {
-      width: 22px;
-      height: 22px;
+      width: 18px;
+      height: 18px;
       border: 2px solid rgba(7, 16, 17, 0.96);
       border-radius: 50%;
       background: var(--accent);
@@ -407,7 +511,7 @@
     .buttonGrid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      gap: 6px;
     }
 
     .buttonGrid.singleAction {
@@ -417,8 +521,8 @@
     .compactGrid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin: 8px 0;
+      gap: 6px;
+      margin: 6px 0;
     }
 
     .compactGrid label {
@@ -454,18 +558,18 @@
     }
 
     .freqNumber {
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     .statGrid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      gap: 6px;
       font-variant-numeric: tabular-nums;
     }
 
     .stat {
-      padding: 8px;
+      padding: 7px;
       border-radius: 6px;
       background: rgba(0, 0, 0, 0.22);
       color: var(--muted);
@@ -503,12 +607,37 @@
         overflow-y: visible;
       }
 
+      body.presentation {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr);
+        height: 100dvh;
+        min-height: 100dvh;
+        overflow: hidden;
+      }
+
       #scopeStage {
         position: relative;
         z-index: 2;
         height: clamp(300px, 48dvh, 520px);
         min-height: 300px;
         border-bottom: 1px solid rgba(111, 255, 178, 0.15);
+      }
+
+      body.presentation #scopeStage {
+        height: 100dvh;
+        min-height: 100dvh;
+        border-bottom: 0;
+      }
+
+      .presentationControls {
+        width: min(460px, calc(100% - 24px));
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 9px;
+      }
+
+      .presentationControls button {
+        min-height: 36px;
       }
 
       aside {
@@ -571,6 +700,10 @@
         min-width: 0;
         font-size: 11px;
       }
+
+      body.presentation .readout {
+        bottom: calc(178px + env(safe-area-inset-bottom));
+      }
     }
 
     @media (max-width: 520px) {
@@ -595,6 +728,15 @@
       .buttonGrid {
         grid-template-columns: 1fr;
       }
+
+      .presentationGroup {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      body.presentation .readout {
+        bottom: calc(318px + env(safe-area-inset-bottom));
+      }
     }
   </style>
 </head>
@@ -606,11 +748,38 @@
       <div id="traceReadout">X 110.00 Hz  /  Y 165.00 Hz</div>
       <div id="perfReadout">0 fps  /  0 samples</div>
     </div>
+    <div class="presentationControls" aria-label="Presentation controls">
+      <button id="presentationExit" type="button">Exit</button>
+      <div class="presentationGroup" data-presentation-osc="x">
+        <label class="miniControl">
+          <span class="row"><span>X freq</span><output data-presentation-out="freq"></output></span>
+          <input type="range" min="0.1" max="520" step="0.01" value="110" data-presentation-param="freq" aria-label="Presentation oscillator X frequency">
+        </label>
+        <label class="miniControl">
+          <span class="row"><span>X amp</span><output data-presentation-out="amp"></output></span>
+          <input type="range" min="0" max="1" step="0.001" value="0.74" data-presentation-param="amp" aria-label="Presentation oscillator X amplitude">
+        </label>
+      </div>
+      <div class="presentationGroup" data-presentation-osc="y">
+        <label class="miniControl">
+          <span class="row"><span>Y freq</span><output data-presentation-out="freq"></output></span>
+          <input type="range" min="0.1" max="520" step="0.01" value="165" data-presentation-param="freq" aria-label="Presentation oscillator Y frequency">
+        </label>
+        <label class="miniControl">
+          <span class="row"><span>Y amp</span><output data-presentation-out="amp"></output></span>
+          <input type="range" min="0" max="1" step="0.001" value="0.74" data-presentation-param="amp" aria-label="Presentation oscillator Y amplitude">
+        </label>
+      </div>
+      <button id="presentationFreeze" type="button">Freeze</button>
+    </div>
   </main>
 
   <aside>
     <h1>Waveform Visualizer</h1>
     <p class="subhead">Two oscillators drive X and Y directly. Rendering uses WebGL2 persistence buffers and shader-generated phosphor traces.</p>
+    <div class="modeBar">
+      <button id="presentationToggle" type="button">Presentation mode</button>
+    </div>
 
     <section class="section">
       <h2>Tuning <span>note / interval</span></h2>
@@ -1274,6 +1443,7 @@
       }
 
       const oscControls = { x: null, y: null };
+      const presentationControls = { x: null, y: null };
 
       function setupHelpTips() {
         const tips = [];
@@ -1466,6 +1636,29 @@
         controls.freqRange.value = String(value);
         controls.freqNumber.value = value.toFixed(2);
         controls.freqOut.textContent = formatParam("freq", value);
+        syncPresentationControls(osc);
+      }
+
+      function syncAmplitudeControls(osc) {
+        const controls = oscControls[osc];
+        if (!controls) {
+          return;
+        }
+        const value = state[osc].amp;
+        controls.ampRange.value = String(value);
+        controls.ampOut.textContent = formatParam("amp", value);
+        syncPresentationControls(osc);
+      }
+
+      function syncPresentationControls(osc) {
+        const controls = presentationControls[osc];
+        if (!controls) {
+          return;
+        }
+        controls.freqRange.value = String(state[osc].freq);
+        controls.freqOut.textContent = formatParam("freq", state[osc].freq);
+        controls.ampRange.value = String(state[osc].amp);
+        controls.ampOut.textContent = formatParam("amp", state[osc].amp);
       }
 
       function syncModeControls(osc) {
@@ -1562,6 +1755,8 @@
           freqRange: section.querySelector("[data-param='freq']"),
           freqNumber: section.querySelector("[data-param='freqNumber']"),
           freqOut: section.querySelector("[data-out='freq']"),
+          ampRange: section.querySelector("[data-param='amp']"),
+          ampOut: section.querySelector("[data-out='amp']"),
           note: section.querySelector("[data-param='note']")
         };
 
@@ -1572,7 +1767,12 @@
           if (param === "freq") {
             continue;
           }
-          bindNumberControl(input, out, () => model[param], value => { model[param] = value; }, value => {
+          bindNumberControl(input, out, () => model[param], value => {
+            model[param] = value;
+            if (param === "amp") {
+              syncPresentationControls(osc);
+            }
+          }, value => {
             return formatParam(param, value);
           });
         }
@@ -1607,6 +1807,56 @@
         });
         syncModeControls(osc);
         syncFrequencyControls(osc);
+        syncAmplitudeControls(osc);
+      }
+
+      function setPresentationMode(enabled) {
+        document.body.classList.toggle("presentation", enabled);
+        document.getElementById("presentationToggle").setAttribute("aria-pressed", String(enabled));
+        resize();
+        requestAnimationFrame(resize);
+      }
+
+      function syncFreezeButtons() {
+        const label = state.frozen ? "Resume" : "Freeze";
+        document.getElementById("toggleFreeze").textContent = label;
+        document.getElementById("presentationFreeze").textContent = label;
+      }
+
+      function setFrozen(value) {
+        state.frozen = value;
+        syncFreezeButtons();
+      }
+
+      function wirePresentationControls() {
+        for (const section of document.querySelectorAll("[data-presentation-osc]")) {
+          const osc = section.dataset.presentationOsc;
+          presentationControls[osc] = {
+            freqRange: section.querySelector("[data-presentation-param='freq']"),
+            freqOut: section.querySelector("[data-presentation-out='freq']"),
+            ampRange: section.querySelector("[data-presentation-param='amp']"),
+            ampOut: section.querySelector("[data-presentation-out='amp']")
+          };
+          presentationControls[osc].freqRange.addEventListener("input", () => {
+            state.tuning.freqMode = "hz";
+            syncGlobalModeControls();
+            setOscFrequency(osc, presentationControls[osc].freqRange.valueAsNumber);
+          }, { passive: true });
+          presentationControls[osc].ampRange.addEventListener("input", () => {
+            state[osc].amp = Number(presentationControls[osc].ampRange.value);
+            syncAmplitudeControls(osc);
+          }, { passive: true });
+          syncPresentationControls(osc);
+        }
+
+        document.getElementById("presentationToggle").addEventListener("click", () => setPresentationMode(true));
+        document.getElementById("presentationExit").addEventListener("click", () => setPresentationMode(false));
+        document.getElementById("presentationFreeze").addEventListener("click", () => setFrozen(!state.frozen));
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape" && document.body.classList.contains("presentation")) {
+            setPresentationMode(false);
+          }
+        });
       }
 
       function wireDisplay() {
@@ -1688,11 +1938,10 @@
       wireOsc(document.querySelector("[data-osc='x']"), "x");
       wireOsc(document.querySelector("[data-osc='y']"), "y");
       wireTuning();
+      wirePresentationControls();
       wireDisplay();
-      document.getElementById("toggleFreeze").addEventListener("click", event => {
-        state.frozen = !state.frozen;
-        event.currentTarget.textContent = state.frozen ? "Resume" : "Freeze";
-      });
+      syncFreezeButtons();
+      document.getElementById("toggleFreeze").addEventListener("click", () => setFrozen(!state.frozen));
 
       const fpsText = document.getElementById("fps");
       const sampleText = document.getElementById("sampleStat");

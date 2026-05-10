@@ -37,6 +37,8 @@ For a standalone APK, use the short-path Windows build flow described in `# Web 
 - The top mode selector switches both oscillators between direct Hz, note selection, and interval mode.
 - Note mode uses per-oscillator C0-B8 note selectors; interval mode uses one shared interval control to relate the two oscillator notes.
 - Tuning supports equal temperament and just intonation for note and interval calculations; direct Hz mode stays unquantized.
+- Presentation mode makes the WebGL waveform canvas the centerpiece and keeps compact frequency and amplitude controls available for live adjustment.
+- Normal mode keeps the waveform visible while showing denser tuning, oscillator, display, renderer, freeze, and export controls.
 - Display: collapsed controls for persistence, trace intensity, focus, trace antialiasing, trace style, phosphor color, decay, bloom, trace window, and samples per frame.
 - Renderer: live performance stats plus export-quality PNG settings for temporary higher-resolution, higher-sample saved images.
 - Freeze/resume keeps the current image on screen.
