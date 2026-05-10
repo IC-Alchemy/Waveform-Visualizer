@@ -9,7 +9,9 @@ Waveform Visualizer is a browser-based XY oscilloscope. It uses two oscillators:
 
 When both oscillators run at the same time, the display draws the relationship between them. Simple frequency ratios produce stable Lissajous figures. More complex ratios, phase offsets, and waveforms create rosettes, grids, folded shapes, and animated interference patterns.
 
-The app runs entirely in `index.html`. It does not require installation or external libraries, but it does require a browser with WebGL2 support.
+The browser version runs entirely in `index.html`. It does not require installation or external libraries, but it does require a browser with WebGL2 support.
+
+A native Android version is also available under `mobile/`. It rebuilds the same two-oscillator oscilloscope as an Expo React Native app using native touch controls, a React Native Skia drawing surface, and Android's share sheet for PNG export.
 
 ## Opening the App
 
@@ -27,6 +29,21 @@ Then open:
 http://127.0.0.1:5177/
 ```
 
+## Android App
+
+The Android app is built from `mobile/`.
+
+For development validation:
+
+```powershell
+cd mobile
+npm install
+npm run typecheck
+npm test
+```
+
+For a user-installable APK, follow the short-path `assembleRelease` workflow in `# Web App to Android App Conversion Reference.md`. The app opens directly as Waveform Visualizer; it is not a WebView wrapper and does not need a hosted website or Metro server when built as a release APK.
+
 ## Main Display
 
 The large left area is the oscilloscope display.
@@ -42,6 +59,8 @@ The app is visual only. It does not currently output audio.
 ## Control Panel
 
 The right panel contains all controls. On small screens, this panel moves below the display.
+
+On Android, the same controls are arranged as stacked touch sections below the live visualizer. Select-style controls open native modal lists, sliders include typed numeric entry, and PNG export opens the Android share sheet instead of downloading a file.
 
 ### Tuning
 

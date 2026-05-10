@@ -16,6 +16,21 @@ python -m http.server 5177
 
 Then open `http://127.0.0.1:5177/`.
 
+## Android App
+
+The native Android port lives in `mobile/`. It keeps the browser app as the behavioral reference, but rebuilds the product as an Expo React Native app with React Native Skia for the oscilloscope surface and Android sharing for PNG export.
+
+Validate the native app:
+
+```powershell
+cd mobile
+npm install
+npm run typecheck
+npm test
+```
+
+For a standalone APK, use the short-path Windows build flow described in `# Web App to Android App Conversion Reference.md`, replacing the source path with this repo's `mobile/` folder. The Android package id is `com.waveformviz.xyoscilloscope`.
+
 ## Controls
 
 - Oscillator X and Y: waveform, frequency, amplitude, phase, and offset.

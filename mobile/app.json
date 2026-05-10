@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Waveform Visualizer",
+    "slug": "waveform-visualizer",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.waveformviz.xyoscilloscope",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    }
+  }
+}

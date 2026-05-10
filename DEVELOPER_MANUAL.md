@@ -2,7 +2,9 @@
 
 ## Project Summary
 
-Waveform Visualizer is a dependency-free single-page WebGL2 application. The full app lives in `index.html`, with project-level usage notes in `README.md`.
+Waveform Visualizer started as a dependency-free single-page WebGL2 application. The browser app still lives in `index.html`, with project-level usage notes in `README.md`.
+
+The native Android port lives in `mobile/`. It keeps the browser app as the behavior reference, but it is a real Expo React Native app rather than a WebView wrapper. The Android visualizer is rebuilt with React Native Skia and the app state is modeled in TypeScript.
 
 The app renders an XY oscilloscope by evaluating two oscillators in a GPU vertex shader. Generated samples can be drawn as connected lines, point sprites, or both. A ping-pong framebuffer pair keeps previous samples alive, fades them over time with a shared decay value, runs a separate bloom pass, and presents the final image with grid, phosphor color, scanline, and vignette effects.
 
@@ -14,9 +16,10 @@ Waveform Visualizer/
   README.md               Short project overview and run instructions
   USER_MANUAL.md          End-user feature manual
   DEVELOPER_MANUAL.md     Developer architecture and maintenance manual
+  mobile/                 Native Expo React Native Android app
 ```
 
-There is no build system, package manager, bundler, or runtime dependency.
+The root browser app has no build system, package manager, bundler, or runtime dependency. The Android app has its own npm-managed native project under `mobile/`.
 
 ## Running Locally
 
@@ -36,6 +39,32 @@ Then open:
 
 ```text
 http://127.0.0.1:5177/
+```
+
+## Native Android Port
+
+The Android app mirrors the browser control model through these files:
+
+```text
+mobile/App.tsx
+mobile/src/model/oscilloscope.ts
+mobile/src/components/Visualizer.tsx
+mobile/src/components/ValueSlider.tsx
+mobile/src/components/OptionModal.tsx
+```
+
+`mobile/src/model/oscilloscope.ts` contains the portable tuning and interval behavior: note conversion, equal and just temperament calculations, interval derivation, frequency clamping, and default app state. Tests live in `mobile/src/model/oscilloscope.test.ts`.
+
+`mobile/src/components/Visualizer.tsx` is the native drawing surface. It does not reuse browser WebGL2 shaders; it samples the same two oscillator model into Skia paths and points, including waveform selection, amplitude, phase, offset, trace window, phosphor color, trail opacity, bloom-like glow, and freeze/resume behavior.
+
+PNG export captures the Skia canvas, writes a PNG into the Expo cache directory, and opens Android sharing. The browser export path still uses WebGL readback and download.
+
+Validate the mobile app with:
+
+```powershell
+cd mobile
+npm run typecheck
+npm test
 ```
 
 ## Browser Requirements
