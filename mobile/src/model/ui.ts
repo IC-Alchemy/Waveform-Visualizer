@@ -15,7 +15,10 @@ export interface AppTheme {
   surface: string;
   surfaceRaised: string;
   surfaceMuted: string;
+  surfaceControl: string;
+  surfaceControlMuted: string;
   border: string;
+  divider: string;
   text: string;
   textMuted: string;
   textSubtle: string;
@@ -23,6 +26,8 @@ export interface AppTheme {
   primaryPressed: string;
   primarySoft: string;
   primarySoftText: string;
+  buttonDisabled: string;
+  buttonDisabledText: string;
   stop: string;
   equalAccent: string;
   justAccent: string;
@@ -31,9 +36,12 @@ export interface AppTheme {
   keySharpBorder: string;
   keySharpText: string;
   visualizerBackground: string;
+  visualizerFrame: string;
   visualizerGridMinor: string;
   visualizerGridMajor: string;
   visualizerLabelBackground: string;
+  traceGlowEqual: string;
+  traceGlowJust: string;
   shadow: string;
   sliderTrack: string;
 }
@@ -86,59 +94,75 @@ export const APP_THEMES: Record<ThemeMode, AppTheme> = {
   light: {
     mode: "light",
     statusBarStyle: "dark",
-    background: "#eef3f8",
-    surface: "#ffffff",
+    background: "#e9eef4",
+    surface: "#f8fbff",
     surfaceRaised: "#ffffff",
-    surfaceMuted: "#e8edf3",
-    border: "#d5dde8",
-    text: "#101820",
-    textMuted: "#485465",
-    textSubtle: "#667386",
-    primary: "#2563eb",
-    primaryPressed: "#1d4ed8",
-    primarySoft: "#eff6ff",
-    primarySoftText: "#1d4ed8",
-    stop: "#475569",
-    equalAccent: "#2563eb",
-    justAccent: "#c2410c",
+    surfaceMuted: "#dfe7f0",
+    surfaceControl: "#f3f7fb",
+    surfaceControlMuted: "#e6edf6",
+    border: "#c7d1df",
+    divider: "#d9e1eb",
+    text: "#0b1420",
+    textMuted: "#435064",
+    textSubtle: "#6a7688",
+    primary: "#0891b2",
+    primaryPressed: "#0e7490",
+    primarySoft: "#e0f7fb",
+    primarySoftText: "#075985",
+    buttonDisabled: "#cdd7e3",
+    buttonDisabledText: "#718095",
+    stop: "#536070",
+    equalAccent: "#06b6d4",
+    justAccent: "#e11d74",
     selectedText: "#ffffff",
-    keySharpBackground: "#2a3440",
-    keySharpBorder: "#2a3440",
-    keySharpText: "#f8fafc",
-    visualizerBackground: "#f9fbfe",
-    visualizerGridMinor: "#d5deea",
-    visualizerGridMajor: "#aebbc9",
-    visualizerLabelBackground: "rgba(255,255,255,0.78)",
-    shadow: "#1d252f",
-    sliderTrack: "#cbd5e1",
+    keySharpBackground: "#101827",
+    keySharpBorder: "#273449",
+    keySharpText: "#eef6ff",
+    visualizerBackground: "#04070d",
+    visualizerFrame: "#17263a",
+    visualizerGridMinor: "rgba(92,126,159,0.24)",
+    visualizerGridMajor: "rgba(148,181,214,0.42)",
+    visualizerLabelBackground: "rgba(6,13,24,0.82)",
+    traceGlowEqual: "rgba(6,182,212,0.28)",
+    traceGlowJust: "rgba(225,29,116,0.26)",
+    shadow: "#0b1220",
+    sliderTrack: "#b8c5d5",
   },
   dark: {
     mode: "dark",
     statusBarStyle: "light",
-    background: "#101418",
-    surface: "#171d24",
-    surfaceRaised: "#202832",
-    surfaceMuted: "#252f3b",
-    border: "#344252",
-    text: "#f4f7fb",
-    textMuted: "#c2ccd8",
-    textSubtle: "#8f9bad",
-    primary: "#60a5fa",
-    primaryPressed: "#3b82f6",
-    primarySoft: "#172a43",
-    primarySoftText: "#bfdbfe",
-    stop: "#64748b",
-    equalAccent: "#38bdf8",
-    justAccent: "#f59e0b",
+    background: "#05070c",
+    surface: "#0b1018",
+    surfaceRaised: "#111927",
+    surfaceMuted: "#141e2d",
+    surfaceControl: "#0f1724",
+    surfaceControlMuted: "#172234",
+    border: "#24344b",
+    divider: "#1c2a3d",
+    text: "#f4f8ff",
+    textMuted: "#c1ccda",
+    textSubtle: "#8797ac",
+    primary: "#67e8f9",
+    primaryPressed: "#22d3ee",
+    primarySoft: "#0e2b39",
+    primarySoftText: "#a5f3fc",
+    buttonDisabled: "#263448",
+    buttonDisabledText: "#718095",
+    stop: "#475569",
+    equalAccent: "#67e8f9",
+    justAccent: "#fb4f9a",
     selectedText: "#07111d",
-    keySharpBackground: "#05080c",
-    keySharpBorder: "#303b49",
-    keySharpText: "#e8edf4",
-    visualizerBackground: "#0c1117",
-    visualizerGridMinor: "#243140",
-    visualizerGridMajor: "#405166",
-    visualizerLabelBackground: "rgba(15,23,32,0.84)",
+    keySharpBackground: "#05070d",
+    keySharpBorder: "#34445e",
+    keySharpText: "#e8f3ff",
+    visualizerBackground: "#030509",
+    visualizerFrame: "#1c2a3f",
+    visualizerGridMinor: "rgba(72,103,140,0.28)",
+    visualizerGridMajor: "rgba(132,162,196,0.5)",
+    visualizerLabelBackground: "rgba(3,7,13,0.86)",
+    traceGlowEqual: "rgba(103,232,249,0.34)",
+    traceGlowJust: "rgba(251,79,154,0.3)",
     shadow: "#000000",
-    sliderTrack: "#334155",
+    sliderTrack: "#314158",
   },
 };

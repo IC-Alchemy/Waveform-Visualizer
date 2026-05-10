@@ -15,7 +15,7 @@ interface SegmentedControlProps<T extends string | number> {
 
 export function SegmentedControl<T extends string | number>({ options, value, onChange, theme }: SegmentedControlProps<T>) {
   return (
-    <View style={[styles.group, { backgroundColor: theme.surfaceMuted }]}>
+    <View style={[styles.group, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}>
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -24,13 +24,22 @@ export function SegmentedControl<T extends string | number>({ options, value, on
             accessibilityState={{ selected }}
             key={option.value}
             onPress={() => onChange(option.value)}
-            style={[
+            style={({ pressed }) => [
               styles.button,
+              {
+                backgroundColor: pressed ? theme.surfaceControlMuted : "transparent",
+                borderColor: pressed ? theme.border : "transparent",
+              },
               selected && styles.selectedButton,
-              selected && { backgroundColor: theme.surfaceRaised, shadowColor: theme.shadow },
+              selected && {
+                backgroundColor: pressed ? theme.primaryPressed : theme.primary,
+                borderColor: pressed ? theme.primaryPressed : theme.primary,
+                shadowColor: theme.shadow,
+              },
+              pressed && styles.pressedButton,
             ]}
           >
-            <Text style={[styles.label, { color: selected ? theme.text : theme.textMuted }]}>{option.label}</Text>
+            <Text style={[styles.label, { color: selected ? theme.selectedText : theme.textMuted }]}>{option.label}</Text>
           </Pressable>
         );
       })}
@@ -43,7 +52,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
     borderRadius: 8,
-    backgroundColor: "#e8edf3",
+    borderWidth: 1,
     padding: 4,
   },
   button: {
@@ -51,13 +60,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
     borderRadius: 6,
     paddingHorizontal: 10,
   },
   selectedButton: {
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.16,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  pressedButton: {
+    transform: [{ scale: 0.98 }],
   },
   label: {
     fontSize: 13,

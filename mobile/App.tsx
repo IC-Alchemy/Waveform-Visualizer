@@ -57,9 +57,9 @@ export default function App() {
   const useLandscapeLayout = shouldUseLandscapeLayout(dimensions, preferences.orientationMode);
   const visualizerHeight = useMemo(() => {
     if (useLandscapeLayout) {
-      return Math.max(300, Math.min(560, dimensions.height - 76));
+      return Math.max(340, Math.min(620, dimensions.height - 72));
     }
-    return Math.max(280, Math.min(360, dimensions.height * 0.38));
+    return Math.max(340, Math.min(520, dimensions.height * 0.54));
   }, [dimensions.height, useLandscapeLayout]);
   const audio = useAudioEngine({
     comparison,
@@ -175,17 +175,19 @@ export default function App() {
     }
   };
 
-  const sectionStyle = [styles.section, { backgroundColor: theme.surface, borderColor: theme.border }];
+  const sectionStyle = [
+    styles.section,
+    { backgroundColor: theme.surfaceControl, borderColor: theme.border, shadowColor: theme.shadow },
+  ];
   const sectionTitleStyle = [styles.sectionTitle, { color: theme.text }];
   const statusTextStyle = [styles.statusText, { color: theme.textSubtle }];
   const configurationStatus = loaded ? preferenceStatus : "Loading configuration...";
 
   const header = (
     <View style={styles.header}>
+      <Text style={[styles.eyebrow, { color: theme.primary }]}>TEMPERAMENT SCOPE</Text>
       <Text style={[styles.title, { color: theme.text }]}>Interval Temperament</Text>
-      <Text style={[styles.subtitle, { color: theme.textSubtle }]}>
-        Native Android comparison of equal temperament and just intonation.
-      </Text>
+      <Text style={[styles.subtitle, { color: theme.textSubtle }]}>Equal / Just / Both</Text>
     </View>
   );
 
@@ -236,7 +238,12 @@ export default function App() {
       <View style={sectionStyle}>
         <Text style={sectionTitleStyle}>Audio</Text>
         <Pressable
-          style={[styles.primaryButton, { backgroundColor: state.audioEnabled ? theme.stop : theme.primary }]}
+          style={({ pressed }) => [
+            styles.primaryButton,
+            {
+              backgroundColor: state.audioEnabled ? theme.stop : pressed ? theme.primaryPressed : theme.primary,
+            },
+          ]}
           onPress={toggleAudio}
         >
           <Text style={[styles.primaryButtonText, { color: theme.selectedText }]}>
@@ -274,18 +281,33 @@ export default function App() {
       <View style={sectionStyle}>
         <Text style={sectionTitleStyle}>Export</Text>
         <Pressable
-          style={[styles.secondaryButton, { backgroundColor: theme.primarySoft, borderColor: theme.primary }]}
+          style={({ pressed }) => [
+            styles.secondaryButton,
+            {
+              backgroundColor: pressed ? theme.surfaceControlMuted : theme.primarySoft,
+              borderColor: theme.primary,
+            },
+          ]}
           onPress={shareImage}
         >
           <Text style={[styles.secondaryButtonText, { color: theme.primarySoftText }]}>Share comparison PNG</Text>
         </Pressable>
         <SegmentedControl options={ANIMATED_EXPORT_OPTIONS} value={animatedDuration} onChange={setAnimatedDuration} theme={theme} />
         <Pressable
-          style={[styles.primaryButton, { backgroundColor: animatedExporting ? theme.stop : theme.primary }]}
+          style={({ pressed }) => [
+            styles.primaryButton,
+            {
+              backgroundColor: animatedExporting
+                ? theme.buttonDisabled
+                : pressed
+                  ? theme.primaryPressed
+                  : theme.primary,
+            },
+          ]}
           onPress={shareAnimation}
           disabled={animatedExporting}
         >
-          <Text style={[styles.primaryButtonText, { color: theme.selectedText }]}>
+          <Text style={[styles.primaryButtonText, { color: animatedExporting ? theme.buttonDisabledText : theme.selectedText }]}>
             {animatedExporting ? "Creating animated GIF..." : "Share animated GIF"}
           </Text>
         </Pressable>
@@ -341,13 +363,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    gap: 14,
-    padding: 14,
+    gap: 12,
+    padding: 12,
     paddingBottom: 34,
   },
   landscapePage: {
     flex: 1,
-    gap: 12,
+    gap: 10,
     padding: 14,
   },
   landscapeBody: {
@@ -357,7 +379,7 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   visualizerColumn: {
-    flex: 1.15,
+    flex: 1.35,
     minWidth: 0,
   },
   landscapeControls: {
@@ -368,29 +390,39 @@ const styles = StyleSheet.create({
     paddingBottom: 18,
   },
   controlStack: {
-    gap: 14,
+    gap: 10,
   },
   header: {
-    gap: 4,
+    gap: 2,
+  },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: "900",
   },
   title: {
-    fontSize: 26,
+    fontSize: 25,
     fontWeight: "900",
     letterSpacing: 0,
   },
   subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "700",
   },
   section: {
-    gap: 12,
+    gap: 10,
     borderRadius: 8,
     borderWidth: 1,
-    padding: 12,
+    padding: 11,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 2,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: "900",
+    textTransform: "uppercase",
   },
   disclosure: {
     minHeight: 34,

@@ -77,11 +77,12 @@ export const Visualizer = forwardRef<VisualizerHandle, VisualizerProps>(function
         y,
         height: paneHeight,
         color: isEqual ? theme.equalAccent : theme.justAccent,
+        glowColor: isEqual ? theme.traceGlowEqual : theme.traceGlowJust,
         path: makeTracePath(size.width, paneHeight, comparison.xFreq, yFreq, time),
         points: makeTracePoints(size.width, paneHeight, comparison.xFreq, yFreq, time),
       };
     });
-  }, [comparison, size, theme.equalAccent, theme.justAccent, time, viewMode]);
+  }, [comparison, size, theme.equalAccent, theme.justAccent, theme.traceGlowEqual, theme.traceGlowJust, time, viewMode]);
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
@@ -105,14 +106,41 @@ export const Visualizer = forwardRef<VisualizerHandle, VisualizerProps>(function
         {panes.map((pane) => (
           <Group key={pane.label} transform={[{ translateY: pane.y }]}>
             <Rect x={0} y={0} width={size.width} height={pane.height} color={theme.visualizerBackground} />
+            <Rect
+              x={2}
+              y={2}
+              width={Math.max(0, size.width - 4)}
+              height={Math.max(0, pane.height - 4)}
+              color={theme.visualizerFrame}
+              opacity={0.22}
+              style="stroke"
+              strokeWidth={1}
+            />
             <Grid
               width={size.width}
               height={pane.height}
               minorColor={theme.visualizerGridMinor}
               majorColor={theme.visualizerGridMajor}
             />
+            <Path
+              path={pane.path}
+              color={pane.glowColor}
+              style="stroke"
+              strokeWidth={18}
+              strokeCap="round"
+              strokeJoin="round"
+            />
+            <Path
+              path={pane.path}
+              color={pane.glowColor}
+              opacity={0.7}
+              style="stroke"
+              strokeWidth={9}
+              strokeCap="round"
+              strokeJoin="round"
+            />
             <Path path={pane.path} color={pane.color} style="stroke" strokeWidth={2.2} strokeCap="round" strokeJoin="round" />
-            <Path path={pane.path} color={pane.color} opacity={0.18} style="stroke" strokeWidth={7} strokeCap="round" strokeJoin="round" />
+            <Path path={pane.path} color={pane.color} opacity={0.36} style="stroke" strokeWidth={4.5} strokeCap="round" strokeJoin="round" />
             {pane.points.map((point, index) => (
               <Circle
                 key={`${pane.label}-${index}`}
@@ -125,6 +153,45 @@ export const Visualizer = forwardRef<VisualizerHandle, VisualizerProps>(function
             ))}
           </Group>
         ))}
+        {panes.length > 1
+          ? panes.slice(1).map((pane) => (
+              <Group key={`divider-${pane.label}`}>
+                <Line
+                  p1={{ x: 10, y: pane.y }}
+                  p2={{ x: Math.max(10, size.width - 10), y: pane.y }}
+                  color={theme.visualizerBackground}
+                  opacity={0.78}
+                  strokeWidth={5}
+                />
+                <Line
+                  p1={{ x: 12, y: pane.y }}
+                  p2={{ x: Math.max(12, size.width - 12), y: pane.y }}
+                  color={theme.visualizerFrame}
+                  opacity={0.82}
+                  strokeWidth={1.4}
+                />
+              </Group>
+            ))
+          : null}
+        <Rect
+          x={0.5}
+          y={0.5}
+          width={Math.max(0, size.width - 1)}
+          height={Math.max(0, size.height - 1)}
+          color={theme.visualizerFrame}
+          style="stroke"
+          strokeWidth={1.5}
+        />
+        <Rect
+          x={4}
+          y={4}
+          width={Math.max(0, size.width - 8)}
+          height={Math.max(0, size.height - 8)}
+          color={theme.visualizerFrame}
+          opacity={0.32}
+          style="stroke"
+          strokeWidth={0.8}
+        />
       </Canvas>
       <View pointerEvents="none" style={styles.labels}>
         {panes.map((pane) => (
@@ -135,7 +202,9 @@ export const Visualizer = forwardRef<VisualizerHandle, VisualizerProps>(function
               {
                 top: pane.y + 10,
                 backgroundColor: theme.visualizerLabelBackground,
-                color: theme.text,
+                borderColor: pane.color,
+                color: pane.color,
+                textShadowColor: pane.glowColor,
               },
             ]}
           >
@@ -163,14 +232,14 @@ function Grid({
   for (let i = 1; i < 10; i += 1) {
     const x = (width * i) / 10;
     const y = (height * i) / 10;
-    minor.push(<Line key={`mx-${i}`} p1={{ x, y: 0 }} p2={{ x, y: height }} color={minorColor} strokeWidth={0.7} />);
-    minor.push(<Line key={`my-${i}`} p1={{ x: 0, y }} p2={{ x: width, y }} color={minorColor} strokeWidth={0.7} />);
+    minor.push(<Line key={`mx-${i}`} p1={{ x, y: 0 }} p2={{ x, y: height }} color={minorColor} opacity={0.72} strokeWidth={0.55} />);
+    minor.push(<Line key={`my-${i}`} p1={{ x: 0, y }} p2={{ x: width, y }} color={minorColor} opacity={0.72} strokeWidth={0.55} />);
   }
   for (let i = 1; i < 2; i += 1) {
     const x = (width * i) / 2;
     const y = (height * i) / 2;
-    major.push(<Line key={`gx-${i}`} p1={{ x, y: 0 }} p2={{ x, y: height }} color={majorColor} strokeWidth={1.1} />);
-    major.push(<Line key={`gy-${i}`} p1={{ x: 0, y }} p2={{ x: width, y }} color={majorColor} strokeWidth={1.1} />);
+    major.push(<Line key={`gx-${i}`} p1={{ x, y: 0 }} p2={{ x, y: height }} color={majorColor} opacity={0.86} strokeWidth={0.9} />);
+    major.push(<Line key={`gy-${i}`} p1={{ x: 0, y }} p2={{ x: width, y }} color={majorColor} opacity={0.86} strokeWidth={0.9} />);
   }
   return (
     <>
@@ -234,10 +303,15 @@ const styles = StyleSheet.create({
   label: {
     position: "absolute",
     left: 12,
-    borderRadius: 5,
+    borderRadius: 4,
+    borderWidth: 1,
     fontSize: 12,
     fontWeight: "800",
+    letterSpacing: 0,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+    overflow: "hidden",
   },
 });

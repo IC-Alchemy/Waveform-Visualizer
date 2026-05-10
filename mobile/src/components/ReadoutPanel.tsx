@@ -22,9 +22,16 @@ export function ReadoutPanel({ comparison, xNote, yNote, theme }: ReadoutPanelPr
   ];
 
   return (
-    <View style={styles.panel}>
-      {rows.map(([label, value]) => (
-        <View key={label} style={styles.row}>
+    <View style={[styles.panel, { backgroundColor: theme.surfaceControl, borderColor: theme.border }]}>
+      {rows.map(([label, value], index) => (
+        <View
+          key={label}
+          style={[
+            styles.row,
+            { borderBottomColor: theme.divider },
+            index === rows.length - 1 && styles.lastRow,
+          ]}
+        >
           <Text style={[styles.label, { color: theme.textSubtle }]}>{label}</Text>
           <Text style={[styles.value, { color: theme.text }]}>{value}</Text>
         </View>
@@ -35,26 +42,34 @@ export function ReadoutPanel({ comparison, xNote, yNote, theme }: ReadoutPanelPr
 
 const styles = StyleSheet.create({
   panel: {
-    gap: 8,
+    borderWidth: 1,
+    borderRadius: 8,
+    overflow: "hidden",
   },
   row: {
-    minHeight: 28,
+    minHeight: 30,
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
+    borderBottomWidth: 1,
     gap: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  lastRow: {
+    borderBottomWidth: 0,
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
   },
   value: {
     flex: 1,
     minWidth: 150,
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 13,
+    fontWeight: "800",
     textAlign: "right",
   },
 });

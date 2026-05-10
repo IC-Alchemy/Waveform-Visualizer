@@ -19,12 +19,16 @@ export function NoteSelector({ label, value, onChange, accentColor, theme }: Not
   const whiteKeys = NOTE_RANGE.filter((key) => !isSharpKey(key.name));
   const blackKeys = NOTE_RANGE.filter((key) => isSharpKey(key.name));
   const keyboardWidth = whiteKeys.length * WHITE_KEY_WIDTH;
+  const whiteKeyFace = theme.mode === "dark" ? "#eef3f8" : theme.surfaceRaised;
+  const whiteKeyPressed = theme.mode === "dark" ? "#d7e1ed" : theme.surfaceControlMuted;
+  const whiteKeyBorder = theme.mode === "dark" ? "#aab8ca" : theme.border;
+  const whiteKeyText = theme.mode === "dark" ? "#0b1420" : theme.text;
 
   return (
     <View style={styles.wrap}>
       <Text style={[styles.title, { color: theme.textMuted }]}>{label}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.keyboard, { width: keyboardWidth }]}>
+        <View style={[styles.keyboard, { width: keyboardWidth, backgroundColor: theme.surfaceControl, borderColor: theme.border }]}>
           <View style={styles.whiteRow}>
             {whiteKeys.map((key) => {
               const selected = key.note === value;
@@ -34,16 +38,22 @@ export function NoteSelector({ label, value, onChange, accentColor, theme }: Not
                   accessibilityState={{ selected }}
                   key={key.note}
                   onPress={() => onChange(key.note)}
-                  style={[
+                  style={({ pressed }) => [
                     styles.whiteKey,
                     {
-                      backgroundColor: theme.surfaceRaised,
-                      borderColor: theme.border,
+                      backgroundColor: pressed ? whiteKeyPressed : whiteKeyFace,
+                      borderColor: whiteKeyBorder,
                     },
-                    selected && { backgroundColor: accentColor, borderColor: accentColor },
+                    selected && styles.selectedKey,
+                    selected && {
+                      backgroundColor: pressed ? theme.primaryPressed : accentColor,
+                      borderColor: pressed ? theme.primaryPressed : accentColor,
+                      shadowColor: accentColor,
+                    },
+                    pressed && styles.pressedKey,
                   ]}
                 >
-                  <Text style={[styles.whiteKeyText, { color: theme.text }, selected && { color: theme.selectedText }]}>
+                  <Text style={[styles.whiteKeyText, { color: whiteKeyText }, selected && { color: theme.selectedText }]}>
                     {key.note}
                   </Text>
                 </Pressable>
@@ -59,14 +69,20 @@ export function NoteSelector({ label, value, onChange, accentColor, theme }: Not
                 accessibilityState={{ selected }}
                 key={key.note}
                 onPress={() => onChange(key.note)}
-                style={[
+                style={({ pressed }) => [
                   styles.blackKey,
                   {
-                    backgroundColor: theme.keySharpBackground,
-                    borderColor: theme.keySharpBorder,
+                    backgroundColor: pressed ? theme.primaryPressed : theme.keySharpBackground,
+                    borderColor: pressed ? theme.primaryPressed : theme.keySharpBorder,
                     left,
                   },
-                  selected && { backgroundColor: accentColor, borderColor: accentColor },
+                  selected && styles.selectedKey,
+                  selected && {
+                    backgroundColor: pressed ? theme.primaryPressed : accentColor,
+                    borderColor: pressed ? theme.primaryPressed : accentColor,
+                    shadowColor: accentColor,
+                  },
+                  pressed && styles.pressedKey,
                 ]}
               >
                 <Text
@@ -109,6 +125,10 @@ const styles = StyleSheet.create({
   },
   keyboard: {
     height: WHITE_KEY_HEIGHT + 8,
+    borderWidth: 1,
+    borderRadius: 7,
+    paddingTop: 3,
+    overflow: "visible",
   },
   whiteRow: {
     position: "absolute",
@@ -122,20 +142,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     borderWidth: 1,
-    borderRadius: 2,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 5,
     paddingBottom: 8,
   },
   blackKey: {
     position: "absolute",
-    top: 0,
+    top: 3,
     zIndex: 2,
     width: BLACK_KEY_WIDTH,
     height: BLACK_KEY_HEIGHT,
     alignItems: "center",
     justifyContent: "flex-end",
     borderWidth: 1,
-    borderRadius: 2,
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 5,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
     paddingBottom: 5,
+  },
+  selectedKey: {
+    zIndex: 3,
+    shadowOpacity: 0.26,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  pressedKey: {
+    transform: [{ translateY: 1 }],
   },
   whiteKeyText: {
     fontSize: 10,
