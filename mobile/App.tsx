@@ -1,9 +1,19 @@
 import Slider from "@react-native-community/slider";
+import { GIFEncoder, applyPalette, quantize } from "gifenc";
 import { StatusBar } from "expo-status-bar";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { useMemo, useRef, useState } from "react";
-import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import {
+  Alert,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { NoteSelector } from "./src/components/NoteSelector";
 import { ReadoutPanel } from "./src/components/ReadoutPanel";
 import { SegmentedControl } from "./src/components/SegmentedControl";
@@ -19,6 +29,13 @@ import {
   type ViewMode,
 } from "./src/model/comparison";
 import {
+  ANIMATED_EXPORT_OPTIONS,
+  ANIMATED_EXPORT_STATUS_TEXT,
+  buildAnimatedExportPlan,
+  bytesToBase64,
+  type AnimatedExportDuration,
+} from "./src/model/animatedExport";
+import {
   AUDIO_TEMPERAMENTS,
   ORIENTATION_MODE_OPTIONS,
   THEME_MODE_OPTIONS,
@@ -31,6 +48,8 @@ export default function App() {
   const [state, setState] = useState<ComparisonState>(DEFAULT_COMPARISON_STATE);
   const [readoutsOpen, setReadoutsOpen] = useState(true);
   const [exportStatus, setExportStatus] = useState("Share exports the current visualizer canvas as PNG.");
+  const [animatedDuration, setAnimatedDuration] = useState<AnimatedExportDuration>(5);
+  const [animatedExporting, setAnimatedExporting] = useState(false);
   const dimensions = useWindowDimensions();
   const { loaded, preferences, preferenceStatus, setOrientationMode, setThemeMode, theme } = useAppPreferences();
   const visualizerRef = useRef<VisualizerHandle>(null);
@@ -101,6 +120,58 @@ export default function App() {
       const message = error instanceof Error ? error.message : "Export failed.";
       setExportStatus(message);
       Alert.alert("Export failed", message);
+    }
+  };
+
+  const shareAnimation = async () => {
+    try {
+      setAnimatedExporting(true);
+      const plan = buildAnimatedExportPlan(animatedDuration);
+      setExportStatus(ANIMATED_EXPORT_STATUS_TEXT.rendering);
+      const canShare = await Sharing.isAvailableAsync();
+      if (!canShare) {
+        throw new Error("Android sharing is not available in this runtime.");
+      }
+      if (!FileSystem.cacheDirectory) {
+        throw new Error("Cache directory is unavailable.");
+      }
+
+      const gif = GIFEncoder({ initialCapacity: 1024 * 1024 });
+      for (const frame of plan.frames) {
+        setExportStatus(`Capturing frame ${frame.index + 1} of ${plan.frameCount}...`);
+        const captured = await visualizerRef.current?.captureRgbaFrame();
+        if (!captured) {
+          throw new Error("No visualizer frame was captured.");
+        }
+        const palette = quantize(captured.pixels, 128, { format: "rgb565" });
+        const indexed = applyPalette(captured.pixels, palette);
+        gif.writeFrame(indexed, captured.width, captured.height, {
+          palette,
+          delay: plan.frameDelayMs,
+          repeat: 0,
+        });
+        if (frame.index < plan.frameCount - 1) {
+          await wait(plan.frameDelayMs);
+        }
+      }
+
+      setExportStatus(ANIMATED_EXPORT_STATUS_TEXT.encoding);
+      gif.finish();
+      const safeStamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const uri = `${FileSystem.cacheDirectory}interval-temperament-${safeStamp}.${plan.fileExtension}`;
+      await FileSystem.writeAsStringAsync(uri, bytesToBase64(gif.bytes()), { encoding: FileSystem.EncodingType.Base64 });
+      setExportStatus(ANIMATED_EXPORT_STATUS_TEXT.sharing);
+      await Sharing.shareAsync(uri, {
+        mimeType: plan.mimeType,
+        dialogTitle: plan.shareDialogTitle,
+      });
+      setExportStatus(ANIMATED_EXPORT_STATUS_TEXT.done);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ANIMATED_EXPORT_STATUS_TEXT.error;
+      setExportStatus(message);
+      Alert.alert("Animated export failed", message);
+    } finally {
+      setAnimatedExporting(false);
     }
   };
 
@@ -207,6 +278,16 @@ export default function App() {
           onPress={shareImage}
         >
           <Text style={[styles.secondaryButtonText, { color: theme.primarySoftText }]}>Share comparison PNG</Text>
+        </Pressable>
+        <SegmentedControl options={ANIMATED_EXPORT_OPTIONS} value={animatedDuration} onChange={setAnimatedDuration} theme={theme} />
+        <Pressable
+          style={[styles.primaryButton, { backgroundColor: animatedExporting ? theme.stop : theme.primary }]}
+          onPress={shareAnimation}
+          disabled={animatedExporting}
+        >
+          <Text style={[styles.primaryButtonText, { color: theme.selectedText }]}>
+            {animatedExporting ? "Creating animated GIF..." : "Share animated GIF"}
+          </Text>
         </Pressable>
         <Text style={statusTextStyle}>{exportStatus}</Text>
       </View>
@@ -371,3 +452,7 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
 });
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

@@ -1,4 +1,15 @@
-import { Canvas, Circle, Group, Line, Path, Rect, Skia, useCanvasRef } from "@shopify/react-native-skia";
+import {
+  AlphaType,
+  Canvas,
+  Circle,
+  ColorType,
+  Group,
+  Line,
+  Path,
+  Rect,
+  Skia,
+  useCanvasRef,
+} from "@shopify/react-native-skia";
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import { useAnimationTime } from "../hooks/useAnimationTime";
@@ -7,6 +18,7 @@ import { type AppTheme, visiblePaneLabels } from "../model/ui";
 
 export interface VisualizerHandle {
   capturePngBase64: () => Promise<string>;
+  captureRgbaFrame: () => Promise<{ width: number; height: number; pixels: Uint8Array }>;
 }
 
 interface VisualizerProps {
@@ -32,6 +44,24 @@ export const Visualizer = forwardRef<VisualizerHandle, VisualizerProps>(function
         throw new Error("Could not capture visualizer image.");
       }
       return base64;
+    },
+    async captureRgbaFrame() {
+      const image = await canvasRef.current?.makeImageSnapshotAsync();
+      if (!image) {
+        throw new Error("Could not capture visualizer frame.");
+      }
+      const width = image.width();
+      const height = image.height();
+      const pixels = image.readPixels(0, 0, {
+        alphaType: AlphaType.Unpremul,
+        colorType: ColorType.RGBA_8888,
+        width,
+        height,
+      });
+      if (!(pixels instanceof Uint8Array)) {
+        throw new Error("Could not read visualizer frame pixels.");
+      }
+      return { width, height, pixels };
     },
   }));
 

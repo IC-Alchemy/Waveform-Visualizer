@@ -1,19 +1,19 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { AppTheme } from "../model/ui";
 
-interface Option<T extends string> {
+interface Option<T extends string | number> {
   value: T;
   label: string;
 }
 
-interface SegmentedControlProps<T extends string> {
-  options: Array<Option<T>>;
+interface SegmentedControlProps<T extends string | number> {
+  options: readonly Option<T>[];
   value: T;
   onChange: (value: T) => void;
   theme: AppTheme;
 }
 
-export function SegmentedControl<T extends string>({ options, value, onChange, theme }: SegmentedControlProps<T>) {
+export function SegmentedControl<T extends string | number>({ options, value, onChange, theme }: SegmentedControlProps<T>) {
   return (
     <View style={[styles.group, { backgroundColor: theme.surfaceMuted }]}>
       {options.map((option) => {
