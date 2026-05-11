@@ -1,15 +1,15 @@
-# Waveform Visualizer User Manual
+# Interval Temperament Visualizer User Manual
 
 ## Overview
 
-Waveform Visualizer is a browser-based XY oscilloscope. It uses two oscillators:
+Interval Temperament Visualizer is a browser-based temperament comparison tool. It uses a WebGL2 XY trace to compare how an interval looks in equal temperament versus just intonation.
 
-- Oscillator X controls the horizontal position of the trace.
-- Oscillator Y controls the vertical position of the trace.
+The app uses two musical oscillators:
 
-When both oscillators run at the same time, the display draws the relationship between them. Simple frequency ratios produce stable Lissajous figures. More complex ratios, phase offsets, and waveforms create rosettes, grids, folded shapes, and animated interference patterns.
+- Oscillator X is the just-intonation root.
+- Oscillator Y is the selected target note. The interval is derived from the distance between X and Y.
 
-The browser version runs entirely in `index.html`. It does not require installation or external libraries, but it does require a browser with WebGL2 support.
+The browser version runs entirely in `index.html`. It has no framework, package manager, build step, or remote runtime dependency. It requires a browser with WebGL2 support.
 
 A native Android version is also available under `mobile/`. It rebuilds the same two-oscillator oscilloscope as an Expo React Native app using native touch controls, a React Native Skia drawing surface, and Android's share sheet for PNG export.
 
@@ -20,7 +20,7 @@ Open `index.html` directly in a WebGL2-capable browser.
 You can also run it through a local server:
 
 ```powershell
-python -m http.server 5177
+python -m http.server 5177 --bind 127.0.0.1
 ```
 
 Then open:
@@ -77,6 +77,13 @@ On Android, the same controls are arranged as stacked touch sections below the l
 ### Tuning
 
 The Tuning section decides how oscillator frequencies are chosen.
+The main display shows the interval relationship as an XY trace.
+
+- X motion comes from the selected root note.
+- Y motion comes from the selected target note.
+- `Equal` shows the equal-tempered target trace.
+- `Just` shows the just-intonation target trace.
+- `Both` shows equal temperament and just intonation in two side-by-side screens.
 
 The app opens in `Interval` mode with `Perfect fifth` selected.
 
@@ -224,68 +231,70 @@ Lower values make the trace dimmer and softer. Higher values make it brighter an
 `Focus` controls beam size in pixels.
 
 Lower values create a thinner trace. Higher values create a thicker trace with more phosphor energy.
+The two fixed C3-B4 piano keyboard graphics stay at the top of the comparison panel, side by side, so the root and target notes can be read as musical positions, not just frequencies. The small `i` button on the piano row explains an important limitation: the keyboard graphic stays fixed, but Just mode treats X as the moving root and recalculates Y from that root by ratio.
 
-#### Trace Antialias
+## Core Controls
 
-`Trace antialias` controls the edge softness of the trace independently from Focus.
+### Root Note
 
-Lower values make the beam edge harder. Higher values smooth the edge and widen the local halo without changing the point size as much as Focus does.
+The root note selects Oscillator X. It is treated as the just-intonation root for the comparison.
 
-#### Trace Style
+The supported keyboard range is fixed from `C3` through `B4`.
 
-`Trace style` chooses how samples are drawn.
+In Just mode, changing the root changes the just-intonation reference. The target Y frequency is rebuilt from the selected X frequency and the chosen interval ratio.
 
-`Hybrid` draws a connected line plus phosphor points. It is the default and keeps low sample counts from looking dotted.
+### Target Note
 
-`Points` uses only point sprites. This is closest to the original renderer.
+The target note selects Oscillator Y. The app derives the semitone distance and interval name from the relationship between the selected X root and Y target.
 
-`Connected` uses only the connected line path. It can look cleaner at low sample counts but is thinner because WebGL line width is browser-limited.
+Changing the target note updates the Y keyboard highlight, the interval name, the semitone distance, the equal-tempered ratio, the just-intonation ratio, and all frequency and difference readouts.
 
-#### Phosphor Color
+### Visual Mode
 
-`Phosphor color` changes the trace and grid tint. Use green for a classic CRT look, amber for warmer monitor-like trails, or blue-white for a sharper electronic display style.
+The visual mode switch has three options:
 
-#### Decay
+- `Equal`: render the equal-tempered version of the interval.
+- `Just`: render the just-intonation version of the interval.
+- `Both`: show two side-by-side screens beneath the piano row, with equal temperament on the left and just intonation on the right.
 
-`Decay` controls how long the persistence buffer remains after each frame.
+Use `Both` when you want to compare the two tuning systems without overlapping their traces on one screen.
 
-Lower values fade old samples faster. Higher values keep longer phosphor trails.
+The trace colors identify Equal and Just views only. They are intentionally different from the X/Y keyboard highlight colors so oscillator identity and temperament identity are not confused.
 
-#### Bloom
+## Comparison Readouts
 
-`Bloom` controls the separate blurred glow pass. Raise it for a wider luminous aura, or lower it when the trace needs to stay crisp.
+The comparison panel summarizes the current interval.
 
-#### Trace Window
+- `Notes`: the selected root and target note.
+- `Interval / semitones`: the musical interval and its semitone distance.
+- `Equal ratio`: the twelve-tone equal-tempered ratio for the interval.
+- `Just ratio`: the simple harmonic ratio used for the just-intonation comparison.
+- `Equal Y Hz`: the target Y frequency in equal temperament.
+- `Just Y Hz`: the target Y frequency in just intonation.
+- `Hz delta`: the absolute frequency difference between the equal and just Y targets.
+- `Cents delta`: the pitch difference between the two Y targets in cents.
 
-`Trace window` controls how much oscillator time is drawn per frame.
+## Audio
 
-Short windows draw a tighter current slice. Longer windows draw more time at once, which can reveal full figures faster but may make motion look denser.
+Audio is optional and off by default.
 
-The displayed value is shown in milliseconds.
+Starting audio requires a user gesture, such as pressing the audio start button. This is required by browser audio policies.
 
-#### Samples/frame
+When enabled, audio uses two Web Audio oscillators:
 
-`Samples/frame` controls how many points the GPU draws each animation frame.
+- X plays the selected root.
+- Y plays the selected target.
 
-Higher values create smoother, denser traces but cost more GPU work. Lower values can improve performance on weaker devices but may make curves appear dotted or sparse.
+A volume slider appears while audio is enabled. Use it to control the output level without changing the selected notes, ratios, readouts, or visual trace.
 
-### Freeze
+Oscillator shape controls are intentionally hidden; the audio path uses slightly soft-clipped sine oscillators so the tones are easier to hear while still retaining sine-like pitch. The comparison remains focused on tuning rather than waveform selection.
 
-`Freeze` pauses oscillator time and preserves the current image. The button changes to `Resume` while frozen. `Resume` continues animation from the paused state.
+In `Both` visual mode, the audio-side selector chooses which Y target you hear:
 
-### Renderer Stats
+- `Equal`: hear the equal-tempered Y frequency.
+- `Just`: hear the just-intonation Y frequency.
 
-The Renderer section shows live performance.
-
-`Frame rate` is the approximate frames per second. It updates several times per second.
-
-`GPU samples` shows the current samples-per-frame setting.
-
-`Export scale` controls the temporary resolution multiplier used only when saving a PNG. The app caps export dimensions to the current browser/GPU texture limit.
-
-`Export samples` controls the temporary sample count used only for saved PNGs. It does not change live performance.
-
-`Save PNG` renders the current oscillator state into an offscreen export target, applies the bloom and phosphor presentation pass, and downloads the result as a PNG. The export image contains the oscilloscope render, not the overlaid label or text readouts.
+Stopping or disabling audio should silence the oscillators without changing the visual comparison.
 
 ## Practical Examples
 
@@ -324,41 +333,40 @@ The Renderer section shows live performance.
 2. Set Y Waveform to `Triangle`.
 3. Increase Trace Intensity if the trace is too dim.
 4. Lower Focus for thinner edges, raise Bloom for more glow, or raise Trace antialias for smoother edges.
+## PNG Export
+
+PNG export saves the current comparison image from the visible WebGL canvas when the browser supports canvas PNG capture.
+
+The exported image is intended to capture the comparison view.
+
+If export fails, try a modern Chromium, Edge, or Firefox browser, reduce the browser window size, or use the live screen as the source for a manual screenshot.
 
 ## Troubleshooting
 
 ### The App Shows a WebGL2 Error
 
-Use a modern browser with WebGL2 enabled. Current desktop versions of Chrome, Edge, and Firefox generally support WebGL2. Some remote desktop sessions, old GPUs, or restricted browser settings may disable it.
+Use a modern browser with WebGL2 enabled. Some old GPUs, remote desktop sessions, or restricted browser settings may disable WebGL2.
 
-### The Trace Is Too Dim
+### I Do Not Hear Audio
 
-Increase `Trace intensity`, increase `Persistence`, raise `Focus`, or raise `Bloom`.
+Audio starts off by default. Press the audio start control first, then check the in-app volume slider. Also check browser tab mute state, system output selection, and system volume.
 
-### The Trace Is Too Bright or Blown Out
+### Both Mode Looks Like One Trace
 
-Lower `Trace intensity`, `Persistence`, or `Bloom`.
+Some intervals produce very small equal-versus-just differences. Check the `Hz delta` and `Cents delta` readouts to confirm whether the two targets are close.
 
-### The App Feels Slow
+### The Export Does Not Download
 
-Lower `Samples/frame`, lower `Focus`, reduce `Bloom`, switch Trace style to `Points`, or reduce the browser window size. High-DPI screens can require more GPU work because the canvas renders at device pixel ratio, capped at 2.
+The browser may have rejected canvas PNG capture. Try a different WebGL2-capable browser or use the live screen as the source for a manual screenshot.
 
-### Note Controls Are Disabled
+### The Layout Feels Tight on Mobile
 
-The app is in `Hz` mode. Switch Mode to `Note` or `Interval`.
-
-### Changing Frequency Leaves Note Mode
-
-This is expected. Directly editing a frequency switches the app back to `Hz` mode so the typed or slider value remains authoritative.
+Use a current mobile browser and rotate to a wider orientation if needed. The app should avoid horizontal overflow and keep controls touchable, but the piano graphics and comparison readouts need room.
 
 ## Areas That Can Be Improved
 
-- Make `Reference` fully retune note and interval calculations instead of mostly storing the value.
-- Add saved user settings so favorite configurations can be named and reloaded.
-- Add import/export for settings as JSON.
-- Add audio output or optional Web Audio monitoring so users can hear the oscillator relationship.
-- Add MIDI input for controlling frequency, note, amplitude, phase, or display settings.
-- Add keyboard shortcuts for freeze/resume and fine parameter changes.
-- Add a reset button for display-only settings.
-- Add mobile-specific control refinements for faster editing on touch screens.
-- Add accessibility improvements, including clearer focus states and richer screen-reader descriptions.
+- Add saved comparison presets.
+- Add JSON import/export for selected root, interval, visual mode, and audio side.
+- Add keyboard shortcuts for interval stepping and audio toggling.
+- Add clearer accessibility labels for keyboard graphics and dynamic readouts.
+- Add browser smoke tests for WebGL rendering, audio start/stop, export, and mobile layout.

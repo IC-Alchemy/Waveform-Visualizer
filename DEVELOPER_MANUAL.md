@@ -1,18 +1,16 @@
-# Waveform Visualizer Developer Manual
+# Interval Temperament Visualizer Developer Manual
 
 ## Project Summary
 
-Waveform Visualizer started as a dependency-free single-page WebGL2 application. The browser app still lives in `index.html`, with project-level usage notes in `README.md`.
+Waveform Visualizer is a dependency-free single-page WebGL2 application. The full app lives in `index.html`, with project-level usage notes in `README.md`.
 
-The native Android port lives in `mobile/`. It keeps the browser app as the behavior reference, but it is a real Expo React Native app rather than a WebView wrapper. The Android visualizer is rebuilt with React Native Skia and the app state is modeled in TypeScript.
-
-The app renders an XY oscilloscope by evaluating two oscillators in a GPU vertex shader. Generated samples can be drawn as connected lines, point sprites, or both. A ping-pong framebuffer pair keeps previous samples alive, fades them over time with a shared decay value, runs a separate bloom pass, and presents the final image with grid, phosphor color, scanline, and vignette effects.
+The product is a temperament comparison tool. It compares equal temperament and just intonation for the interval derived from selected X and Y keys using a WebGL2 XY trace, fixed C3-B4 piano keyboard graphics, comparison readouts, optional Web Audio, and PNG comparison export.
 
 ## Repository Layout
 
 ```text
-Waveform Visualizer/
-  index.html              Main app: HTML, CSS, JavaScript, shaders
+Waveform-Visualizer/
+  index.html              Main app: HTML, CSS, JavaScript, shaders, audio, export
   README.md               Short project overview and run instructions
   USER_MANUAL.md          End-user feature manual
   DEVELOPER_MANUAL.md     Developer architecture and maintenance manual
@@ -32,7 +30,7 @@ index.html
 For a local HTTP server:
 
 ```powershell
-python -m http.server 5177
+python -m http.server 5177 --bind 127.0.0.1
 ```
 
 Then open:
@@ -69,40 +67,20 @@ npm test
 
 ## Browser Requirements
 
-The app requires WebGL2:
+The app requires WebGL2 for the visual renderer. Optional audio uses standard Web Audio and must be started from a user gesture.
 
-```js
-const gl = canvas.getContext("webgl2", {
-  antialias: false,
-  alpha: false,
-  depth: false,
-  stencil: false,
-  powerPreference: "high-performance",
-  preserveDrawingBuffer: false
-});
-```
+If WebGL2 is unavailable, the app should show a clear error instead of a blank screen.
 
-If WebGL2 is unavailable, the app replaces the document body with a short error message.
-
-## High-Level Architecture
+## Architecture
 
 The file has four major layers:
 
-- HTML markup defines the canvas, readouts, and right-side control panel.
-- CSS defines the dark oscilloscope layout, presentation and normal mode sizing, responsive panel behavior, control styling, and scope surface.
-- JavaScript state and UI wiring keep controls synchronized with the oscillator model.
-- WebGL2 shaders and render loop generate, accumulate, and present the trace.
+- HTML markup for the canvas, fixed piano keyboards, comparison readouts, controls, and export/audio buttons.
+- CSS for the responsive app layout, presentation and normal mode sizing, keyboard graphics, control styling, and readable comparison panels.
+- JavaScript state and DOM wiring for notes, intervals, visual mode, readouts, audio, and export.
+- WebGL2 shaders and render loop for equal, just, and split comparison traces.
 
-The app is wrapped in an immediately invoked function expression:
-
-```js
-(() => {
-  "use strict";
-  // app code
-})();
-```
-
-This keeps implementation details out of global scope.
+Keep implementation details inside the existing single-file structure unless the user explicitly asks for a larger refactor.
 
 ## Application State
 
@@ -227,8 +205,6 @@ Important functions:
 
 The app uses DOM IDs and `data-*` attributes instead of a framework.
 
-Presentation mode should be wired as a layout toggle over the existing state model. The compact frequency and amplitude controls must call the same setters or synchronization paths as the full oscillator controls, so changing a value in one layout immediately updates the other layout and the renderer. Normal mode remains the full editing surface with the smaller always-visible waveform and the complete tuning, oscillator, display, renderer, freeze, and export controls.
-
 ### Oscillator Controls
 
 `wireOsc(section, osc)` attaches controls for one oscillator section.
@@ -246,10 +222,6 @@ It handles:
 Frequency edits switch the global mode back to `hz`. Note edits switch the global mode to `note` and apply note-derived frequencies.
 
 `oscControls` stores important DOM references for X and Y.
-
-Waveform and Note selects are grouped visually in compact two-column rows, but they still use the same `data-param` attributes and synchronization paths.
-
-`wirePhaseMod()` wires the global Phase Modulation checkbox and modulation-rate slider. It updates `state.phaseMod`, disables the rate slider while modulation is off, and refreshes the visible on/off and Hz readouts.
 
 ### Tuning Controls
 
@@ -355,90 +327,56 @@ Important uniforms:
 `uOscX` and `uOscY` are packed as:
 
 ```text
-frequency, amplitude, phase, offset
+justYHz = xRootHz * justIntervalRatio
 ```
 
 When Phase Modulation is enabled, `setTraceUniforms()` uploads `state.y.phase + phaseModOffset` for `uOscY.z`. The stored Y phase slider remains unchanged; `phaseModOffset` is derived from `simTime`, so Freeze also pauses modulation and PNG export captures the current animated phase.
 
-The shader clamps output coordinates slightly beyond normalized device coordinates:
+Do not treat the selected Y key as an absolute just-tuned note independent of X. X is the moving root.
 
-```glsl
-clamp(x, -1.08, 1.08)
-clamp(y, -1.08, 1.08)
-```
+The comparison readouts should be calculated from the same values sent to the renderer and audio path:
 
-This allows edge glow while keeping geometry bounded.
+- `Hz delta = justYHz - equalYHz` or the documented signed/absolute convention used by the UI.
+- `Cents delta = 1200 * log2(justYHz / equalYHz)`.
 
-The point fragment shader uses `gl_PointCoord` to create a bright core and soft halo for every point. The line fragment shader uses the same oscillator positions but avoids `gl_PointCoord`, which keeps the connected path valid for non-point primitives.
+If the app displays rounded values, keep enough precision internally so small temperament differences do not disappear from the render or audio path.
 
-### Pass 3: Bloom
+## WebGL2 Renderer
 
-The bloom pass runs after trace accumulation and before final presentation.
+The renderer should draw a live XY trace from oscillator uniforms. Oscillator X is the root. Oscillator Y is selected from the equal or just target depending on visual mode.
 
-Shader pair:
+Expected render behavior:
 
-- `vertFull`
-- `fragBloom`
+- `Equal`: draw only the equal-tempered trace.
+- `Just`: draw only the just-intonation trace.
+- `Both`: draw two side-by-side panes in one frame using distinct Material-style colors.
 
-The first bloom pass extracts bright trace energy and applies a horizontal blur into the first bloom buffer. The second pass vertically blurs that texture into the second bloom buffer. The live bloom targets run at half resolution to keep the pass affordable.
+The trace can still use the existing GPU-generated sample strategy, but keep sample count high enough for smooth curves and keep point sprites small enough that dots do not dominate the line. Legacy presentation passes and labels should not be described or reintroduced unless explicitly requested.
 
-### Pass 4: Present
+## Web Audio
 
-The present pass renders the latest write texture and bloom texture to the screen.
+Audio is optional and must remain off by default.
 
-Shader pair:
+Implementation expectations:
 
-- `vertFull`
-- `fragPresent`
+- Create or resume audio only from a user gesture.
+- Use two oscillators: X for root, Y for target.
+- Keep user-facing oscillator shape selection hidden.
+- Use sine oscillator sources through a slight soft-clipping stage so the tones are easier to hear while retaining sine-like pitch.
+- Show a volume slider while audio is enabled and route it to the output gain level.
+- Hide or remove shape controls from the user-facing audio path.
+- In `Equal` visual mode, Y follows the equal target.
+- In `Just` visual mode, Y follows the just target.
+- In `Both` visual mode, Y follows the audio-side selector.
+- Stop, disconnect, or mute cleanly when audio is disabled.
 
-The present shader adds:
+Use the same synchronized frequency values that drive the readouts and renderer.
 
-- bloom texture
-- minor grid lines
-- major grid lines
-- center crosshair
-- rounded scope mask
-- vignette
-- scanline modulation
-- background tint
+## PNG Export
 
-The result is clamped to `[0, 1]` before output.
+PNG export should remain available through the current canvas when the browser supports canvas PNG encoding.
 
-### PNG Export
-
-`saveExportImage()` renders a one-shot export through temporary offscreen framebuffers. It uses the current oscillator state, `max(state.samples, state.exportSamples)`, and a higher render target derived from `exportScale`. The export path reads back the final presented framebuffer, flips the pixel rows for canvas coordinates, encodes through a temporary 2D canvas, and triggers a PNG download.
-
-Export dimensions are capped by the smaller of `MAX_TEXTURE_SIZE` and `4096` to avoid creating oversized render targets. The exported PNG contains the WebGL scope render only; DOM overlays are intentionally not captured.
-
-## Performance Notes
-
-The main performance controls are:
-
-- framebuffer size
-- device pixel ratio
-- samples per frame
-- point size/focus
-- fragment cost in the present shader
-
-The app avoids CPU-side vertex generation. The CPU only updates uniforms and UI state; the GPU generates all trace samples.
-
-Potential bottlenecks:
-
-- high `Samples/frame` values on integrated GPUs
-- large browser windows on high-DPI screens
-- large `Focus` values, because bigger points shade more pixels
-- multiple texture samples in the present shader
-
-## Error Handling
-
-Shader compile and program link failures throw errors:
-
-```js
-throw new Error(gl.getShaderInfoLog(shader) || "Shader compilation failed");
-throw new Error(gl.getProgramInfoLog(p) || "Program link failed");
-```
-
-There is no user-facing shader failure UI. During development, use the browser console for shader and runtime errors.
+The export should represent the current comparison view. The current implementation captures the WebGL canvas rather than the surrounding DOM readouts.
 
 ## Manual Test Checklist
 
@@ -452,111 +390,60 @@ After changing code, run through this checklist:
 6. Switch Mode to `Interval` and confirm interval changes affect Y relative to X.
 7. Switch between `Equal` and `Just` and confirm interval-derived frequencies change where expected.
 8. Test all four waveforms on both oscillators.
-9. Toggle Phase Modulation, confirm the phase relationship moves, and confirm the `0.001 Hz` to `0.1 Hz` Mod rate slider changes the speed across the full slider travel.
-10. Open several `i` help popovers and confirm they position correctly without blocking the compact selectors.
-11. Adjust Persistence, Trace intensity, Focus, Trace antialias, Trace style, Phosphor color, Decay, Bloom, Trace window, and Samples/frame.
-12. Test Freeze and Resume, including that phase modulation pauses while frozen.
-13. Resize the browser and confirm the canvas remains sharp and fills the stage.
-14. Toggle Presentation mode and confirm the WebGL waveform becomes the centerpiece while compact frequency and amplitude controls still update both oscillators.
-15. Toggle back to normal mode and confirm the smaller always-visible waveform and full parameter controls return with synchronized values.
-16. Save a PNG at default export quality and confirm a non-empty download.
-17. Test a narrow viewport to confirm the control panel moves below the display without horizontal overflow.
+9. Adjust Persistence, Trace intensity, Focus, Trace antialias, Trace style, Phosphor color, Decay, Bloom, Trace window, and Samples/frame.
+10. Test Freeze and Resume.
+11. Resize the browser and confirm the canvas remains sharp and fills the stage.
+12. Save a PNG at default export quality and confirm a non-empty download.
+13. Test a narrow viewport to confirm the control panel moves below the display.
 
 ## Suggested Automated Tests
 
-This project currently has no automated tests. If it grows beyond a single-file demo, useful tests would include:
+This project currently has no build step. If automated coverage is added, keep it lightweight and compatible with the static app:
 
-- pure function tests for note parsing, MIDI conversion, interval ratios, and frequency clamping
-- DOM tests for mode switching and disabled control states
-- shader compile smoke tests in a real WebGL browser
-- Playwright visual smoke tests for default render, the collapsed Display section, and responsive layout
-- performance smoke tests for high sample counts
-- export smoke tests for framebuffer allocation and PNG download
+- Pure function tests for note parsing, interval metadata, equal ratios, just ratios, frequency derivation, and cents delta.
+- DOM smoke tests for root note, target note, visual-mode, audio-side, audio-volume, and readout synchronization.
+- Browser smoke tests that verify WebGL initializes and produces nonblank pixels.
+- Export smoke tests for canvas PNG download.
+- Responsive layout checks for mobile-width overflow.
 
 ## Development Guidelines
 
-Keep the no-build single-file structure unless there is a clear reason to introduce tooling.
-
-Prefer small, explicit functions over framework-style abstractions. The app is compact enough that direct DOM wiring is readable.
-
-When adding state, update both:
-
-- the `state` object
-- the relevant control synchronization path
-
-When adding a control, make sure it has:
-
-- initial state value
-- DOM markup
-- output formatting if needed
-- event listener
-- sync behavior when modes change
-
-When adding shader uniforms, update:
-
-- shader source
-- `loc` uniform lookup
-- render-loop uniform upload
-
-When changing framebuffer formats, test on multiple browsers and GPUs. The current path uses unsigned-byte RGBA textures for broad compatibility.
+- Keep the no-build single-file structure.
+- Do not add frameworks, package managers, bundlers, or remote runtime dependencies for normal feature work.
+- Keep musical comparison state as the source of truth.
+- Update docs when visible behavior changes.
+- Keep keyboard graphics, readouts, renderer uniforms, and audio frequencies synchronized through shared state application.
+- Preserve the two-oscillator WebGL2 trace model.
+- Prefer explicit metadata tables for notes and intervals over duplicated literals in UI handlers.
+- Test visual changes in a browser-sized viewport, especially mobile layout changes.
 
 ## Common Extension Points
 
-### Add a New Waveform
+### Add or Adjust an Interval Ratio
 
-1. Add an option to both waveform selects.
-2. Assign the next integer enum value.
-3. Add a branch to `osc(float t, int wave)` in `vertTrace`.
-4. Test it on both X and Y.
+1. Add or adjust the interval label, semitone count, and just ratio in the interval metadata.
+2. Confirm the equal ratio is still derived from semitones.
+3. Confirm keyboard-derived intervals continue to map to the expected label and ratio.
+4. Update user-facing docs if ratio behavior changes.
 
-### Add Settings Export
+### Add Presets
 
-1. Serialize the `state` object.
-2. Decide whether live-only fields such as `frozen` should be included.
-3. Download JSON through a Blob URL.
-4. Add import validation before applying external state.
-5. Call tuning, oscillator, and display sync functions after import.
+1. Serialize root note, target note, visual mode, and audio side.
+2. Keep audio running state out of saved presets unless there is a clear user-facing reason.
+3. Reapply through the normal synchronization path.
 
-### Add Audio
+### Improve Export
 
-Use Web Audio oscillators or an AudioWorklet. Keep visual oscillator state and audio oscillator state synchronized through a shared state update path. Add a clear mute/output control because the current app is silent by design.
-
-### Add MIDI
-
-Use Web MIDI where available. Map MIDI CC or note input to state changes, then reuse existing setter/sync functions. Avoid bypassing state synchronization because that will make the visible controls drift from the actual renderer.
+1. Keep export dependency-free.
+2. Reuse the current comparison renderer where possible.
+3. Make clear whether DOM labels/readouts are included or only the WebGL canvas.
+4. Test exported images for nonblank pixels.
 
 ## Areas That Can Be Improved
 
-### User-Facing Improvements
-
-- Fully implement the `Reference` tuning control so A reference or base tuning affects note and interval calculations.
-- Add save/load for custom presets.
-- Add JSON import/export for full app state.
-- Add more waveform types, such as pulse width, noise, sample-and-hold, exponential curve, and custom harmonic blends.
-- Add optional audio output through Web Audio.
-- Add MIDI input mappings for live control.
-- Add richer onboarding help without cluttering the main panel.
-- Add keyboard shortcuts and fine-adjust modifiers.
-
-### Technical Improvements
-
-- Split the single file into modules if the app starts growing beyond the current scope.
-- Add unit tests for note, interval, and state synchronization logic.
-- Add browser smoke tests that verify WebGL initializes and produces non-black pixels.
-- Add a shader error overlay for development builds.
-- Add URL hash or query-string state encoding for shareable settings.
-- Add explicit validation for imported or future persisted state.
-- Improve just-intonation note handling so key center and tuning reference are clear.
-- Clarify whether `Reference` should represent A4, X base frequency, or a general tuning anchor.
-- Add robust accessibility labels for grouped controls and dynamic readouts.
-- Consider using floating-point framebuffer formats if future effects need higher dynamic range.
-- Consider a low-power mode that reduces sample count, DPR, or present-shader glow taps.
-
-### Code Quality Improvements
-
-- Remove the unused `getter` parameter from `bindNumberControl()` or use it for reset/sync semantics.
-- Centralize control metadata so min/max/step/format values are defined once.
-- Add a small state apply function that handles mutation plus all required sync calls.
-- Separate tuning math from DOM wiring so it can be tested without a browser.
-- Give waveform enum values named constants to reduce reliance on magic numbers.
-- Add comments around the shader pass sequence for future contributors.
+- Add named presets for common temperament comparisons.
+- Add JSON import/export for comparison state.
+- Add URL hash or query-string state for shareable comparisons.
+- Add richer accessibility labels for piano keyboard graphics and live readouts.
+- Add keyboard shortcuts for stepping root notes and intervals.
+- Add a small browser smoke-test script for WebGL, export, audio start/stop, and responsive layout.
