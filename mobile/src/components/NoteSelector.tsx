@@ -46,14 +46,15 @@ export function NoteSelector({ label, value, onChange, accentColor, theme }: Not
                     },
                     selected && styles.selectedKey,
                     selected && {
-                      backgroundColor: pressed ? theme.primaryPressed : accentColor,
+                      backgroundColor: pressed ? whiteKeyPressed : whiteKeyFace,
                       borderColor: pressed ? theme.primaryPressed : accentColor,
                       shadowColor: accentColor,
                     },
                     pressed && styles.pressedKey,
                   ]}
                 >
-                  <Text style={[styles.whiteKeyText, { color: whiteKeyText }, selected && { color: theme.selectedText }]}>
+                  {selected ? <View style={[styles.whiteSelectedIndicator, { backgroundColor: accentColor }]} /> : null}
+                  <Text style={[styles.whiteKeyText, { color: whiteKeyText }, selected && { color: accentColor }]}>
                     {key.note}
                   </Text>
                 </Pressable>
@@ -78,18 +79,19 @@ export function NoteSelector({ label, value, onChange, accentColor, theme }: Not
                   },
                   selected && styles.selectedKey,
                   selected && {
-                    backgroundColor: pressed ? theme.primaryPressed : accentColor,
+                    backgroundColor: pressed ? theme.primaryPressed : theme.keySharpBackground,
                     borderColor: pressed ? theme.primaryPressed : accentColor,
                     shadowColor: accentColor,
                   },
                   pressed && styles.pressedKey,
                 ]}
               >
+                {selected ? <View style={[styles.blackSelectedIndicator, { backgroundColor: accentColor }]} /> : null}
                 <Text
                   style={[
                     styles.blackKeyText,
                     { color: theme.keySharpText },
-                    selected && { color: theme.selectedText },
+                    selected && { color: "#ffffff" },
                   ]}
                 >
                   {key.note}
@@ -147,6 +149,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 5,
     borderBottomRightRadius: 5,
     paddingBottom: 8,
+    overflow: "hidden",
   },
   blackKey: {
     position: "absolute",
@@ -162,16 +165,33 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 2,
     borderTopRightRadius: 2,
     paddingBottom: 5,
+    overflow: "hidden",
   },
   selectedKey: {
     zIndex: 3,
-    shadowOpacity: 0.26,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
   },
   pressedKey: {
     transform: [{ translateY: 1 }],
+  },
+  whiteSelectedIndicator: {
+    position: "absolute",
+    left: 4,
+    right: 4,
+    top: 5,
+    height: 6,
+    borderRadius: 999,
+  },
+  blackSelectedIndicator: {
+    position: "absolute",
+    left: 4,
+    right: 4,
+    top: 4,
+    height: 4,
+    borderRadius: 999,
   },
   whiteKeyText: {
     fontSize: 10,
