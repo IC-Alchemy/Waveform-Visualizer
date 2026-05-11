@@ -2,29 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Interval Temperament Visualizer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Waveform Visualizer</title>
   <style>
     :root {
-      color-scheme: light;
-      --md-blue: #1a73e8;
-      --md-green: #34a853;
-      --md-yellow: #fbbc04;
-      --md-red: #ea4335;
-      --trace-equal: #00acc1;
-      --trace-just: #f9ab00;
-      --osc-x: #1a73e8;
-      --osc-y: #34a853;
-      --md-text: #202124;
-      --md-muted: #5f6368;
-      --md-border: #dadce0;
-      --md-surface: #ffffff;
-      --md-surface-2: #f8fafd;
-      --md-bg: #eef3fb;
-      --md-focus: rgba(26, 115, 232, 0.18);
-      --radius: 8px;
-      --shadow: 0 18px 45px rgba(60, 64, 67, 0.16);
-      font-family: Roboto, "Google Sans", "Segoe UI", system-ui, sans-serif;
       color-scheme: dark;
       --panel: #11181a;
       --panel-2: #0b1011;
@@ -44,54 +25,87 @@
 
     html,
     body {
-      margin: 0;
+      width: 100%;
+      height: 100%;
       min-height: 100%;
-      background: var(--md-bg);
-      color: var(--md-text);
+      margin: 0;
+      overflow: hidden;
+      background: #050808;
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, sans-serif;
       letter-spacing: 0;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: rgba(98, 255, 159, 0.16);
     }
 
     body {
-      min-height: 100dvh;
-      overflow-x: hidden;
+      display: grid;
+      grid-template-columns: minmax(360px, 62vw) minmax(340px, 1fr);
+      height: 100dvh;
     }
 
-    button,
-    input,
-    select {
-      font: inherit;
-      letter-spacing: 0;
+    body.presentation {
+      grid-template-columns: minmax(0, 1fr);
     }
 
-    button {
-      cursor: pointer;
+    #scopeStage {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(56, 255, 145, 0.08), transparent 42%),
+        linear-gradient(145deg, #081011 0%, #020404 100%);
+      overflow: hidden;
+    }
+
+    #scope {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+      user-select: none;
     }
 
     body.presentation aside {
       display: none;
     }
 
-    .appShell {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 420px;
-      gap: 16px;
-      min-height: 100dvh;
-      padding: 16px;
+    .scope-label {
+      position: absolute;
+      left: 18px;
+      top: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: rgba(213, 255, 230, 0.72);
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: none;
+      text-transform: uppercase;
     }
 
-    .visualPanel,
-    .controlPanel {
-      min-width: 0;
-      border: 1px solid rgba(218, 220, 224, 0.9);
-      border-radius: var(--radius);
-      background: var(--md-surface);
-      box-shadow: var(--shadow);
+    .pilot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(98, 255, 159, 0.95);
     }
 
-    .visualPanel {
+    .readout {
+      position: absolute;
+      left: 18px;
+      bottom: 14px;
       display: grid;
-      grid-template-rows: auto auto minmax(320px, 1fr) auto;
-      overflow: hidden;
+      gap: 4px;
+      min-width: 210px;
+      color: rgba(213, 255, 230, 0.68);
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      pointer-events: none;
     }
 
     .presentationControls {
@@ -172,14 +186,6 @@
       height: 14px;
     }
 
-    .visualHeader {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 18px 20px 14px;
-      border-bottom: 1px solid var(--md-border);
-      background: var(--md-surface-2);
     aside {
       min-width: 0;
       height: 100vh;
@@ -194,32 +200,18 @@
     }
 
     h1 {
-      margin: 0;
-      font-size: 22px;
       margin: 0 0 4px;
       font-size: 18px;
       font-weight: 650;
-      line-height: 1.15;
     }
 
     .subhead {
-      margin: 4px 0 0;
-      color: var(--md-muted);
-      font-size: 13px;
       margin: 0 0 12px;
       color: var(--muted);
       font-size: 12px;
       line-height: 1.35;
     }
 
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 10px;
-      color: var(--md-muted);
-      font-size: 12px;
-      white-space: nowrap;
     .section {
       border-top: 1px solid rgba(143, 255, 198, 0.13);
       padding: 12px 0;
@@ -230,16 +222,6 @@
       padding-top: 0;
     }
 
-    .legendItem {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .swatch {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
     h2 {
       display: flex;
       align-items: baseline;
@@ -251,58 +233,59 @@
       text-transform: uppercase;
     }
 
-    .swatch.equal {
-      background: var(--trace-equal);
+    h2 span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
     }
 
-    .swatch.just {
-      background: var(--trace-just);
-    }
-
-    .pianoRow {
-      position: relative;
+    .controlDropdown summary {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--md-border);
-      background: #fff;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin: 0;
+      cursor: pointer;
+      list-style: none;
     }
 
-    .canvasWrap {
-      position: relative;
-      min-height: 0;
-      background: #f8fafd;
-    }
-
-    #visualizer {
-      display: block;
-      width: 100%;
-      height: 100%;
-      min-height: 320px;
-      touch-action: none;
-    }
-
-    .paneLabels {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      right: 12px;
-      z-index: 2;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      pointer-events: none;
-    }
-
-    .visualPanel[data-view="equal"] .paneLabels,
-    .visualPanel[data-view="just"] .paneLabels {
-      grid-template-columns: 1fr;
-    }
-
-    .visualPanel[data-view="equal"] .paneLabel.just,
-    .visualPanel[data-view="just"] .paneLabel.equal {
+    .controlDropdown summary::-webkit-details-marker {
       display: none;
+    }
+
+    .summaryHeading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      color: #f3fff8;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .summaryHeading span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .summaryIcon {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(139, 255, 195, 0.24);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .summaryIcon::before {
+      content: "+";
+    }
+
     .controlDropdown[open] .summaryIcon::before {
       content: "-";
     }
@@ -333,124 +316,80 @@
       color: #effff5;
     }
 
-    .paneLabel {
-      justify-self: start;
+    .helpAnchor,
+    .labelTitle {
       display: inline-flex;
       gap: 4px;
       align-items: center;
-      gap: 7px;
-      padding: 7px 10px;
-      border: 1px solid rgba(218, 220, 224, 0.92);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.88);
-      color: var(--md-muted);
-      font-size: 12px;
-      font-weight: 650;
-      box-shadow: 0 8px 20px rgba(60, 64, 67, 0.12);
-      backdrop-filter: blur(10px);
+      min-width: 0;
     }
 
-    .pianoInfo {
-      position: absolute;
-      top: 10px;
-      right: 18px;
-      z-index: 4;
+    .tipWrap {
+      position: relative;
+      display: inline-flex;
+      flex: none;
+      align-items: center;
     }
 
-    .infoButton {
+    .helpButton {
       display: inline-grid;
       place-items: center;
-      width: 24px;
-      height: 24px;
-      border: 1px solid var(--md-border);
       width: 12px;
       height: 12px;
       min-height: 12px;
       padding: 0;
       border-color: rgba(139, 255, 195, 0.24);
       border-radius: 50%;
-      background: #fff;
-      color: var(--md-muted);
-      font-size: 13px;
       background: rgba(98, 255, 159, 0.045);
       color: rgba(98, 255, 159, 0.82);
       font-size: 8px;
       font-weight: 800;
       line-height: 1;
-      box-shadow: 0 4px 12px rgba(60, 64, 67, 0.14);
+      text-transform: none;
     }
 
-    .infoButton[aria-expanded="true"],
-    .infoButton:hover {
-      border-color: var(--osc-x);
-      color: var(--osc-x);
+    .helpButton:hover,
+    .helpButton:focus-visible,
+    .tipWrap[data-open="true"] .helpButton {
+      border-color: rgba(98, 255, 159, 0.78);
+      background: rgba(98, 255, 159, 0.18);
+      color: white;
+      outline: none;
     }
 
-    .infoPopover {
-      position: absolute;
-      top: 30px;
-      right: 0;
-      width: min(340px, calc(100vw - 48px));
-      padding: 10px 12px;
-      border: 1px solid var(--md-border);
-      border-radius: var(--radius);
-      background: #fff;
-      color: var(--md-muted);
-      font-size: 12px;
-      line-height: 1.45;
-      pointer-events: none;
-      box-shadow: 0 12px 28px rgba(60, 64, 67, 0.18);
-    }
-
-    .webglNotice {
-      position: absolute;
-      inset: 0;
+    .tipBubble {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 30;
       display: none;
-      place-items: center;
-      padding: 24px;
-      color: var(--md-red);
-      text-align: center;
-      background: #fff;
+      width: min(278px, calc(100vw - 34px));
+      padding: 10px 11px;
+      border: 1px solid rgba(139, 255, 195, 0.28);
+      border-radius: 6px;
+      background: #071011;
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.46);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.35;
+      text-transform: none;
     }
 
-    .readoutStrip {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1px;
-      border-top: 1px solid var(--md-border);
-      background: var(--md-border);
-    }
-
-    .metric {
-      min-width: 0;
-      padding: 12px 14px;
-      background: #fff;
-    }
-
-    .metric span {
+    .tipWrap[data-open="true"] .tipBubble {
       display: block;
-      color: var(--md-muted);
-      font-size: 11px;
-      font-weight: 650;
-      text-transform: uppercase;
     }
 
-    .metric strong {
+    .tipBubble strong {
       display: block;
-      margin-top: 4px;
-      overflow: hidden;
-      font-size: 17px;
-      font-weight: 650;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      margin-bottom: 4px;
+      color: #f3fff8;
+      font-size: 12px;
     }
 
-    .controlPanel {
+    label,
+    .controlLabel {
       display: grid;
-      align-content: start;
-      gap: 18px;
-      padding: 18px;
-      overflow-y: auto;
       gap: 4px;
       margin: 8px 0;
       color: var(--muted);
@@ -458,49 +397,26 @@
       font-weight: 600;
     }
 
-    .section {
+    .row {
       display: grid;
+      grid-template-columns: 1fr auto;
       gap: 12px;
-      padding-bottom: 18px;
-      border-bottom: 1px solid var(--md-border);
+      align-items: center;
     }
 
-    .section:last-child {
-      padding-bottom: 0;
-      border-bottom: 0;
+    output {
+      min-width: 66px;
+      color: #e8fff3;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
     }
 
-    h2 {
-      margin: 0;
-      color: var(--md-text);
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
+    input,
+    select,
+    button {
+      font: inherit;
     }
 
-    .section.compact {
-      gap: 9px;
-      padding-bottom: 14px;
-    }
-
-    .segmented {
-      display: grid;
-      grid-auto-columns: 1fr;
-      grid-auto-flow: column;
-      overflow: hidden;
-      border: 1px solid var(--md-border);
-      border-radius: var(--radius);
-      background: #fff;
-    }
-
-    .segmented button {
-      min-height: 42px;
-      border: 0;
-      border-right: 1px solid var(--md-border);
-      background: transparent;
-      color: var(--md-muted);
-      font-size: 13px;
-      font-weight: 650;
     input[type="number"],
     input[type="color"],
     select,
@@ -519,57 +435,41 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .segmented button:last-child {
-      border-right: 0;
     select {
       padding: 0 24px 0 9px;
       color: #ecfff6;
     }
 
-    .segmented button[aria-pressed="true"] {
-      background: var(--md-blue);
-      color: #fff;
+    input[type="color"] {
+      padding: 4px 6px;
+      cursor: pointer;
     }
 
-    .segmented.visual button[aria-pressed="true"] {
-      background: #3c4043;
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      touch-action: manipulation;
     }
 
-    .segmented.audio button[aria-pressed="true"] {
-      background: #5f6368;
+    button:not(.helpButton) {
+      padding: 0 12px;
     }
 
-    .segmented.compact button {
-      min-height: 34px;
-      font-size: 12px;
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid rgba(98, 255, 159, 0.72);
+      outline-offset: 2px;
     }
 
-    .keyboardBlock {
-      display: grid;
-      gap: 8px;
+    @media (hover: hover) {
+      button:hover {
+        border-color: rgba(98, 255, 159, 0.52);
+        color: white;
+      }
     }
 
-    .keyboardHeader {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: baseline;
-    }
-
-    .keyboardHeader span {
-      color: var(--md-muted);
-      font-size: 12px;
-    }
-
-    .keyboard {
-      position: relative;
-      height: 132px;
-      min-width: 0;
-      border: 1px solid var(--md-border);
-      border-radius: var(--radius);
-      background: #cfd8dc;
-      overflow: hidden;
-      user-select: none;
     input[type="range"] {
       appearance: none;
       -webkit-appearance: none;
@@ -581,30 +481,13 @@
       touch-action: pan-y;
     }
 
-    .whiteKeys {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      grid-template-columns: repeat(14, minmax(0, 1fr));
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      border: 1px solid rgba(139, 255, 195, 0.16);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.34);
     }
 
-    .key {
-      position: relative;
-      border: 0;
-      color: var(--md-text);
-      transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
-    }
-
-    .whiteKey {
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      min-width: 0;
-      padding: 0 1px 9px;
-      border-right: 1px solid #c7cdd1;
-      background: #fff;
-      font-size: 11px;
-      font-weight: 650;
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
       width: 20px;
@@ -616,22 +499,6 @@
       box-shadow: 0 0 0 1px rgba(98, 255, 159, 0.52), 0 0 18px rgba(98, 255, 159, 0.24);
     }
 
-    .whiteKey:last-child {
-      border-right: 0;
-    }
-
-    .blackKey {
-      position: absolute;
-      top: 0;
-      z-index: 2;
-      width: 5.2%;
-      height: 46%;
-      border: 0;
-      border-radius: 0 0 5px 5px;
-      background: #202124;
-      color: #fff;
-      font-size: 0;
-      box-shadow: 0 3px 7px rgba(32, 33, 36, 0.28);
     input[type="range"]::-moz-range-track {
       height: 6px;
       border: 1px solid rgba(139, 255, 195, 0.16);
@@ -653,18 +520,10 @@
       gap: 6px;
     }
 
-    .key:hover {
-      background: #e8f0fe;
+    .buttonGrid.singleAction {
+      grid-template-columns: 1fr;
     }
 
-    .blackKey:hover {
-      background: #3c4043;
-    }
-
-    .key[aria-pressed="true"] {
-      background: var(--osc-x);
-      color: #fff;
-      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
     .compactGrid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -676,22 +535,13 @@
       margin: 0;
     }
 
-    .keyboard[data-role="y"] .key[aria-pressed="true"] {
-      background: var(--osc-y);
+    .compactGrid .controlLabel {
+      margin: 0;
     }
 
-    .fieldGrid {
+    .segmented {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .readoutCard {
-      min-width: 0;
-      padding: 10px 12px;
-      border: 1px solid var(--md-border);
-      border-radius: var(--radius);
-      background: var(--md-surface-2);
       gap: 3px;
       padding: 3px;
       border: 1px solid rgba(139, 255, 195, 0.14);
@@ -699,21 +549,12 @@
       background: rgba(0, 0, 0, 0.18);
     }
 
-    .readoutCard span {
-      display: block;
-      color: var(--md-muted);
+    .segmented button {
+      min-height: 28px;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted);
       font-size: 11px;
-      font-weight: 650;
-      text-transform: uppercase;
-    }
-
-    .readoutCard strong {
-      display: block;
-      margin-top: 4px;
-      overflow-wrap: anywhere;
-      font-size: 15px;
-      font-weight: 650;
-      line-height: 1.25;
     }
 
     .segmented button[aria-pressed="true"] {
@@ -823,38 +664,13 @@
       margin-top: 2px;
     }
 
-    .audioControls,
-    .exportControls {
+    .statGrid {
       display: grid;
-      gap: 10px;
-    }
-
-    .audioControls.compact {
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: center;
-      gap: 8px;
-    }
-
-    .audioControls.compact .statusLine {
-      grid-column: 1 / -1;
       grid-template-columns: 1fr 1fr;
       gap: 6px;
       font-variant-numeric: tabular-nums;
     }
 
-    .volumeControl {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: auto minmax(120px, 1fr) auto;
-      gap: 10px;
-      align-items: center;
-      padding: 8px 10px;
-      border: 1px solid var(--md-border);
-      border-radius: var(--radius);
-      background: var(--md-surface-2);
-      color: var(--md-muted);
-      font-size: 12px;
-      font-weight: 650;
     .stat {
       padding: 7px;
       border-radius: 6px;
@@ -878,68 +694,14 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .volumeControl input[type="range"] {
-      width: 100%;
-      accent-color: var(--osc-x);
-    }
-
-    .volumeValue {
-      min-width: 38px;
-      color: var(--md-text);
-      text-align: right;
-    }
-
-    .primaryButton,
-    .secondaryButton {
-      min-height: 42px;
-      border-radius: var(--radius);
-      font-size: 13px;
-      font-weight: 650;
-    }
-
-    .compactButton {
-      width: fit-content;
-      min-height: 34px;
-      padding: 0 14px;
-      font-size: 12px;
-    }
-
-    .primaryButton {
-      border: 1px solid var(--md-blue);
-      background: var(--md-blue);
-      color: #fff;
-    }
-
-    .secondaryButton {
-      border: 1px solid var(--md-border);
-      background: #fff;
-      color: var(--md-blue);
-    }
-
-    .statusLine {
-      min-height: 18px;
-      color: var(--md-muted);
-      font-size: 12px;
-      line-height: 1.35;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    @media (max-width: 1020px) {
-      .appShell {
-        grid-template-columns: 1fr;
+    @media (max-width: 860px) {
+      html {
+        height: auto;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
       }
 
-      .controlPanel {
-        overflow: visible;
-      }
-    }
-
-    @media (max-width: 680px) {
-      .appShell {
-        padding: 10px;
       body {
         display: block;
         height: auto;
@@ -1051,12 +813,6 @@
         transform: translateX(20px);
       }
 
-      .visualHeader {
-        display: grid;
-      }
-
-      .legend {
-        justify-content: flex-start;
       .helpButton {
         width: 16px;
         height: 16px;
@@ -1064,18 +820,16 @@
         font-size: 9px;
       }
 
-      .readoutStrip,
-      .fieldGrid {
-        grid-template-columns: 1fr 1fr;
+      .tipBubble {
+        width: min(320px, calc(100vw - 28px));
+        font-size: 13px;
       }
 
-      .pianoRow {
-        gap: 8px;
-        padding: 12px;
-      }
-
-      .keyboard {
-        height: 104px;
+      .readout {
+        right: 14px;
+        bottom: 12px;
+        min-width: 0;
+        font-size: 11px;
       }
 
       body.presentation .readout {
@@ -1083,59 +837,27 @@
       }
     }
 
-      .whiteKey {
-        font-size: 8px;
-        padding-bottom: 7px;
+    @media (max-width: 520px) {
+      #scopeStage {
+        height: clamp(280px, 44dvh, 440px);
+        min-height: 280px;
       }
 
-      .paneLabels {
+      .scope-label {
+        left: 14px;
+        top: 12px;
         gap: 8px;
-      }
-
-      .paneLabel {
-        padding: 6px 8px;
         font-size: 11px;
       }
 
-      .pianoInfo {
-        top: 8px;
-        right: 10px;
-      }
-    }
-
-    @media (max-width: 440px) {
-      .fieldGrid {
+      .compactGrid {
         grid-template-columns: 1fr;
+        gap: 10px;
       }
 
-      .segmented {
-        grid-auto-flow: row;
-      }
-
-      .segmented button {
-        border-right: 0;
-        border-bottom: 1px solid var(--md-border);
-      }
-
-      .segmented button:last-child {
-        border-bottom: 0;
-      }
-
-      .audioControls.compact {
+      .statGrid,
+      .buttonGrid {
         grid-template-columns: 1fr;
-      }
-
-      .compactButton {
-        width: 100%;
-      }
-
-      .volumeControl {
-        grid-template-columns: 1fr;
-        gap: 6px;
-      }
-
-      .volumeValue {
-        text-align: left;
       }
 
       .presentationGroup {
@@ -1150,24 +872,6 @@
   </style>
 </head>
 <body>
-  <div class="appShell">
-    <main class="visualPanel" data-view="both" aria-label="Temperament comparison display">
-      <header class="visualHeader">
-        <div>
-          <h1>Interval Temperament Visualizer</h1>
-          <p class="subhead">Compare equal temperament against just intonation from the same two selected piano keys.</p>
-        </div>
-        <div class="legend" aria-label="Trace legend">
-          <span class="legendItem"><span class="swatch equal"></span>Equal temperament</span>
-          <span class="legendItem"><span class="swatch just"></span>Just intonation</span>
-        </div>
-      </header>
-
-      <section class="pianoRow" aria-label="Piano note selection">
-        <div class="pianoInfo">
-          <button class="infoButton" id="keyboardInfoButton" type="button" aria-label="Keyboard tuning note" aria-expanded="false" aria-controls="keyboardInfoText" title="Keyboard tuning note">i</button>
-          <div class="infoPopover hidden" id="keyboardInfoText" role="note">
-            The keys are fixed equal-tempered positions. In Just mode, X becomes the moving root and Y is recalculated from that root by ratio; a completely accurate keyboard picture would need a new root-specific tuning for every selected X note.
   <main id="scopeStage" aria-label="XY oscilloscope display">
     <canvas id="scope"></canvas>
     <div class="scope-label"><span class="pilot"></span><span>XY analog mode</span></div>
@@ -1227,48 +931,12 @@
             <button type="button" data-temperament="just" aria-pressed="false">Just</button>
           </div>
         </div>
-        <div class="keyboardBlock">
-          <div class="keyboardHeader">
-            <h2>Oscillator X root</h2>
-            <span id="xNoteLabel">C3</span>
-          </div>
-          <div class="keyboard" id="keyboardX" data-role="x" aria-label="Oscillator X piano keyboard"></div>
-        </div>
-        <div class="keyboardBlock">
-          <div class="keyboardHeader">
-            <h2>Oscillator Y target</h2>
-            <span id="yNoteLabel">G3</span>
-          </div>
-          <div class="keyboard" id="keyboardY" data-role="y" aria-label="Oscillator Y piano keyboard"></div>
-        </div>
-      </section>
-
-      <div class="canvasWrap">
-        <div class="paneLabels" aria-hidden="true">
-          <span class="paneLabel equal"><span class="swatch equal"></span>Equal temperament</span>
-          <span class="paneLabel just"><span class="swatch just"></span>Just intonation</span>
-        </div>
-        <canvas id="visualizer"></canvas>
-        <div class="webglNotice" id="webglNotice">WebGL2 is required for the live comparison display.</div>
+        <label data-help-key="referenceFreq">Reference
+          <input id="referenceFreq" type="number" inputmode="decimal" enterkeyhint="done" min="0.1" max="520" step="0.01" value="110">
+        </label>
       </div>
+    </section>
 
-      <section class="readoutStrip" aria-label="Primary comparison readouts">
-        <div class="metric"><span>X root</span><strong id="xSummary">C3 - 130.81 Hz</strong></div>
-        <div class="metric"><span>Y target</span><strong id="ySummary">G3</strong></div>
-        <div class="metric"><span>Interval</span><strong id="intervalSummary">Perfect fifth</strong></div>
-        <div class="metric"><span>Difference</span><strong id="deltaSummary">+1.96 cents</strong></div>
-      </section>
-    </main>
-
-    <aside class="controlPanel" aria-label="Controls">
-      <section class="section compact">
-        <h2>Visual comparison</h2>
-        <div class="segmented visual compact" id="viewMode" role="group" aria-label="Visual mode">
-          <button type="button" data-view="equal" aria-pressed="false">Equal</button>
-          <button type="button" data-view="just" aria-pressed="false">Just</button>
-          <button type="button" data-view="both" aria-pressed="true">Both</button>
-        </div>
-      </section>
     <section class="section" data-osc="x">
       <h2>Oscillator X <span>horizontal</span></h2>
       <div class="compactGrid choiceGrid">
@@ -1350,105 +1018,105 @@
       </label>
     </section>
 
-      <section class="section compact">
-        <h2>Audio</h2>
-        <div class="audioControls compact">
-          <button class="primaryButton compactButton" id="toggleAudio" type="button">Enable audio</button>
-          <div class="segmented audio compact" id="audioTemperament" role="group" aria-label="Audio temperament">
-            <button type="button" data-audio="equal" aria-pressed="true">Hear equal</button>
-            <button type="button" data-audio="just" aria-pressed="false">Hear just</button>
-          </div>
-          <label class="volumeControl hidden" id="volumeControl">
-            <span>Volume</span>
-            <input id="volumeSlider" type="range" min="0" max="100" step="1" value="55" aria-label="Audio volume">
-            <span class="volumeValue" id="volumeValue">55%</span>
+    <details class="section controlDropdown" id="displayOptions">
+      <summary>
+        <span class="summaryHeading">Display <span>phosphor</span></span>
+        <span class="summaryIcon" aria-hidden="true"></span>
+      </summary>
+      <div class="displayControls">
+        <label data-help-key="persistence">
+          <span class="row"><span>Persistence</span><output data-out="persistence"></output></span>
+          <input id="persistence" type="range" min="0.86" max="0.997" step="0.001" value="0.972">
+        </label>
+        <label data-help-key="intensity">
+          <span class="row"><span>Trace intensity</span><output data-out="intensity"></output></span>
+          <input id="intensity" type="range" min="0.04" max="0.9" step="0.001" value="0.32">
+        </label>
+        <label data-help-key="focus">
+          <span class="row"><span>Focus</span><output data-out="focus"></output></span>
+          <input id="focus" type="range" min="1.2" max="5" step="0.1" value="2.4">
+        </label>
+        <label data-help-key="traceAntialias">
+          <span class="row"><span>Trace antialias</span><output data-out="traceAntialias"></output></span>
+          <input id="traceAntialias" type="range" min="0" max="1" step="0.01" value="0.54">
+        </label>
+        <div class="compactGrid">
+          <label data-help-key="traceStyle">Trace style
+            <select id="traceStyle">
+              <option value="hybrid">Hybrid</option>
+              <option value="points">Points</option>
+              <option value="lines">Connected</option>
+            </select>
           </label>
-          <div class="statusLine" id="audioStatus">Audio is off until enabled.</div>
+          <label data-help-key="phosphorColor">Phosphor color
+            <input id="phosphorColor" type="color" value="#5cff9f" aria-label="Phosphor color">
+          </label>
         </div>
-      </section>
+        <label data-help-key="decay">
+          <span class="row"><span>Decay</span><output data-out="decay"></output></span>
+          <input id="decay" type="range" min="0.82" max="1" step="0.001" value="0.960">
+        </label>
+        <label data-help-key="bloom">
+          <span class="row"><span>Bloom</span><output data-out="bloom"></output></span>
+          <input id="bloom" type="range" min="0" max="2.2" step="0.01" value="0.82">
+        </label>
+        <label data-help-key="traceWindow">
+          <span class="row"><span>Trace window</span><output data-out="window"></output></span>
+          <input id="window" type="range" min="0.002" max="0.08" step="0.001" value="0.032">
+        </label>
+        <label data-help-key="samples">
+          <span class="row"><span>Samples/frame</span><output data-out="samples"></output></span>
+          <input id="samples" type="range" min="512" max="16384" step="512" value="8192">
+        </label>
+        <div class="buttonGrid singleAction">
+          <button id="toggleFreeze" type="button">Freeze</button>
+        </div>
+      </div>
+    </details>
 
-      <section class="section">
-        <h2>Comparison data</h2>
-        <div class="fieldGrid">
-          <div class="readoutCard"><span>Equal ratio</span><strong id="equalRatio">1.498307</strong></div>
-          <div class="readoutCard"><span>Just ratio</span><strong id="justRatio">3:2</strong></div>
-          <div class="readoutCard"><span>Equal Y</span><strong id="equalY">196.00 Hz</strong></div>
-          <div class="readoutCard"><span>Just Y</span><strong id="justY">196.22 Hz</strong></div>
-          <div class="readoutCard"><span>Hz delta</span><strong id="hzDelta">+0.22 Hz</strong></div>
-          <div class="readoutCard"><span>Cents delta</span><strong id="centsDelta">+1.96 cents</strong></div>
-        </div>
-      </section>
-
-      <section class="section">
-        <h2>Export</h2>
-        <div class="exportControls">
-          <button class="secondaryButton" id="saveImage" type="button">Save comparison PNG</button>
-          <div class="statusLine" id="exportStatus" aria-live="polite"></div>
-        </div>
-      </section>
-    </aside>
-  </div>
+    <section class="section">
+      <h2>Renderer <span>live</span></h2>
+      <div class="statGrid">
+        <div class="stat">Frame rate<strong id="fps">0</strong></div>
+        <div class="stat">GPU samples<strong id="sampleStat">0</strong></div>
+      </div>
+      <label data-help-key="exportScale">
+        <span class="row"><span>Export scale</span><output data-out="exportScale"></output></span>
+        <input id="exportScale" type="range" min="1" max="3" step="0.5" value="2">
+      </label>
+      <label data-help-key="exportSamples">
+        <span class="row"><span>Export samples</span><output data-out="exportSamples"></output></span>
+        <input id="exportSamples" type="range" min="16384" max="65536" step="4096" value="32768">
+      </label>
+      <button id="savePng" type="button">Save PNG</button>
+      <div class="statusLine" id="exportStatus" aria-live="polite"></div>
+    </section>
+  </aside>
 
   <script>
     (() => {
       "use strict";
 
-      const canvas = document.getElementById("visualizer");
-      const gl = canvas.getContext("webgl2", {
-        antialias: true,
-        alpha: false,
-        preserveDrawingBuffer: true
-      });
-      const notice = document.getElementById("webglNotice");
-
-      const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-      const WHITE_NAMES = new Set(["C", "D", "E", "F", "G", "A", "B"]);
-      const BLACK_OFFSETS = new Map([
-        ["C#", 0.68],
-        ["D#", 1.68],
-        ["F#", 3.68],
-        ["G#", 4.68],
-        ["A#", 5.68]
-      ]);
-      const KEY_RANGE = buildKeyRange(48, 71);
       const TAU = Math.PI * 2;
+      const FREQ_MIN = 0.1;
+      const FREQ_MAX = 520;
+      const canvas = document.getElementById("scope");
+      const compactRenderQuery = window.matchMedia("(pointer: coarse), (max-width: 860px)");
+      const gl = canvas.getContext("webgl2", {
+        antialias: false,
+        alpha: false,
+        depth: false,
+        stencil: false,
+        powerPreference: "high-performance",
+        preserveDrawingBuffer: false
+      });
 
-      const JUST_INTERVALS = [
-        { semitones: 0, name: "Unison", ratio: 1, label: "1:1" },
-        { semitones: 1, name: "Minor second", ratio: 16 / 15, label: "16:15" },
-        { semitones: 2, name: "Major second", ratio: 9 / 8, label: "9:8" },
-        { semitones: 3, name: "Minor third", ratio: 6 / 5, label: "6:5" },
-        { semitones: 4, name: "Major third", ratio: 5 / 4, label: "5:4" },
-        { semitones: 5, name: "Perfect fourth", ratio: 4 / 3, label: "4:3" },
-        { semitones: 6, name: "Tritone", ratio: 45 / 32, label: "45:32" },
-        { semitones: 7, name: "Perfect fifth", ratio: 3 / 2, label: "3:2" },
-        { semitones: 8, name: "Minor sixth", ratio: 8 / 5, label: "8:5" },
-        { semitones: 9, name: "Major sixth", ratio: 5 / 3, label: "5:3" },
-        { semitones: 10, name: "Minor seventh", ratio: 9 / 5, label: "9:5" },
-        { semitones: 11, name: "Major seventh", ratio: 15 / 8, label: "15:8" },
-        { semitones: 12, name: "Octave", ratio: 2, label: "2:1" },
-        { semitones: 13, name: "Minor ninth", ratio: 32 / 15, label: "32:15" },
-        { semitones: 14, name: "Major ninth", ratio: 9 / 4, label: "9:4" },
-        { semitones: 15, name: "Minor tenth", ratio: 12 / 5, label: "12:5" },
-        { semitones: 16, name: "Major tenth", ratio: 5 / 2, label: "5:2" },
-        { semitones: 17, name: "Perfect eleventh", ratio: 8 / 3, label: "8:3" },
-        { semitones: 18, name: "Tritone + octave", ratio: 45 / 16, label: "45:16" },
-        { semitones: 19, name: "Perfect twelfth", ratio: 3, label: "3:1" },
-        { semitones: 20, name: "Minor thirteenth", ratio: 16 / 5, label: "16:5" },
-        { semitones: 21, name: "Major thirteenth", ratio: 10 / 3, label: "10:3" },
-        { semitones: 22, name: "Minor fourteenth", ratio: 18 / 5, label: "18:5" },
-        { semitones: 23, name: "Major fourteenth", ratio: 15 / 4, label: "15:4" }
-      ];
-      const JUST_BY_SEMITONES = new Map(JUST_INTERVALS.map(interval => [interval.semitones, interval]));
+      if (!gl) {
+        document.body.innerHTML = "<main style='padding:32px;font:16px Segoe UI,sans-serif;color:white;background:#060909;min-height:100vh'>WebGL2 is required for the oscilloscope renderer.</main>";
+        return;
+      }
 
       const state = {
-        viewMode: "both",
-        audioEnabled: false,
-        audioTemperament: "equal",
-        volume: 0.55,
-        xNote: "C3",
-        yNote: "G3",
-        traceWindow: 0.085,
         x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0, note: "A2" },
         y: { wave: 0, freq: 164.81377845643496, amp: 0.74, phase: 90, offset: 0, note: "E3" },
         phaseMod: { enabled: false, rate: 0.01 },
@@ -1463,47 +1131,11 @@
         bloom: 0.82,
         window: 0.032,
         samples: 8192,
-        pointSize: 1.45
+        exportScale: 2,
+        exportSamples: 32768,
+        frozen: false
       };
 
-      const els = {
-        visualPanel: document.querySelector(".visualPanel"),
-        xSummary: document.getElementById("xSummary"),
-        ySummary: document.getElementById("ySummary"),
-        intervalSummary: document.getElementById("intervalSummary"),
-        deltaSummary: document.getElementById("deltaSummary"),
-        xNoteLabel: document.getElementById("xNoteLabel"),
-        yNoteLabel: document.getElementById("yNoteLabel"),
-        equalRatio: document.getElementById("equalRatio"),
-        justRatio: document.getElementById("justRatio"),
-        equalY: document.getElementById("equalY"),
-        justY: document.getElementById("justY"),
-        hzDelta: document.getElementById("hzDelta"),
-        centsDelta: document.getElementById("centsDelta"),
-        audioStatus: document.getElementById("audioStatus"),
-        exportStatus: document.getElementById("exportStatus"),
-        toggleAudio: document.getElementById("toggleAudio"),
-        volumeControl: document.getElementById("volumeControl"),
-        volumeSlider: document.getElementById("volumeSlider"),
-        volumeValue: document.getElementById("volumeValue"),
-        keyboardInfoButton: document.getElementById("keyboardInfoButton"),
-        keyboardInfoText: document.getElementById("keyboardInfoText"),
-        saveImage: document.getElementById("saveImage")
-      };
-
-      const audio = {
-        ctx: null,
-        xOsc: null,
-        yOsc: null,
-        xShaper: null,
-        yShaper: null,
-        gain: null
-      };
-
-      if (!gl) {
-        notice.style.display = "grid";
-        return;
-      }
       const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
       const JUST_NOTE_RATIOS = [1, 16 / 15, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 45 / 32, 3 / 2, 8 / 5, 5 / 3, 9 / 5, 15 / 8];
       const C4_EQUAL_FREQ = 440 * Math.pow(2, -9 / 12);
@@ -1671,27 +1303,15 @@
           gl_Position = vec4(p, 0.0, 1.0);
         }`;
 
-      const fragGrid = `#version 300 es
+      const fragFade = `#version 300 es
         precision highp float;
-        uniform vec2 uResolution;
+        uniform sampler2D uPrev;
+        uniform vec3 uDecay;
         in vec2 vUv;
         out vec4 outColor;
-
-        float gridLine(float value, float scale, float width) {
-          float coord = value * scale;
-          float dist = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
-          return 1.0 - smoothstep(width, width + 1.0, dist);
-        }
-
         void main() {
-          vec2 p = vUv * 2.0 - 1.0;
-          float minor = max(gridLine(p.x, 10.0, 0.22), gridLine(p.y, 10.0, 0.22));
-          float major = max(gridLine(p.x, 2.0, 0.42), gridLine(p.y, 2.0, 0.42));
-          float axis = max(1.0 - smoothstep(0.0, 0.004, abs(p.x)), 1.0 - smoothstep(0.0, 0.004, abs(p.y)));
-          vec3 bg = mix(vec3(0.982, 0.989, 0.998), vec3(0.956, 0.974, 0.996), vUv.y);
-          vec3 grid = vec3(0.74, 0.79, 0.86) * minor * 0.11 + vec3(0.55, 0.62, 0.72) * major * 0.15;
-          vec3 axes = vec3(0.31, 0.37, 0.45) * axis * 0.22;
-          outColor = vec4(bg + grid + axes, 1.0);
+          vec3 old = clamp(texture(uPrev, vUv).rgb, vec3(0.0), vec3(4.0));
+          outColor = vec4(old * uDecay, 1.0);
         }`;
 
       const vertTrace = `#version 300 es
@@ -1700,80 +1320,230 @@
         uniform float uTraceWindow;
         uniform float uSampleCount;
         uniform float uPointSize;
-        uniform float uXFreq;
-        uniform float uYFreq;
+        uniform vec4 uOscX;
+        uniform vec4 uOscY;
+        uniform int uWaveX;
+        uniform int uWaveY;
         out float vAge;
+
+        float osc(float t, int wave) {
+          float s = sin(t);
+          if (wave == 0) {
+            return s;
+          }
+          if (wave == 1) {
+            return asin(s) * 0.63661977236;
+          }
+          if (wave == 2) {
+            return tanh(s * 5.8);
+          }
+          float p = fract(t * 0.15915494309);
+          return p * 2.0 - 1.0;
+        }
 
         void main() {
           float id = float(gl_VertexID);
           float f = id / max(uSampleCount - 1.0, 1.0);
           float localTime = uTime + f * uTraceWindow;
-          float x = sin(6.28318530718 * uXFreq * localTime) * 0.76;
-          float y = sin(6.28318530718 * uYFreq * localTime + 1.57079632679) * 0.76;
-          gl_Position = vec4(x, y, 0.0, 1.0);
+          float xPhase = radians(uOscX.z);
+          float yPhase = radians(uOscY.z);
+          float x = osc(6.28318530718 * uOscX.x * localTime + xPhase, uWaveX) * uOscX.y + uOscX.w;
+          float y = osc(6.28318530718 * uOscY.x * localTime + yPhase, uWaveY) * uOscY.y + uOscY.w;
+          gl_Position = vec4(clamp(x, -1.08, 1.08), clamp(y, -1.08, 1.08), 0.0, 1.0);
           gl_PointSize = uPointSize;
-          vAge = f;
+          vAge = smoothstep(0.0, 1.0, f);
         }`;
 
-      const fragLine = `#version 300 es
+      const fragTrace = `#version 300 es
         precision highp float;
-        uniform vec3 uColor;
-        uniform float uAlpha;
-        in float vAge;
-        out vec4 outColor;
-        void main() {
-          float head = mix(0.52, 1.0, vAge);
-          outColor = vec4(uColor * head, uAlpha);
-        }`;
-
-      const fragPoint = `#version 300 es
-        precision highp float;
-        uniform vec3 uColor;
-        uniform float uAlpha;
+        uniform float uIntensity;
+        uniform float uAntialias;
+        uniform vec3 uPhosphorColor;
         in float vAge;
         out vec4 outColor;
         void main() {
           vec2 p = gl_PointCoord * 2.0 - 1.0;
           float d = dot(p, p);
-          float mask = 1.0 - smoothstep(0.52, 1.0, d);
-          float head = mix(0.58, 1.0, vAge);
-          outColor = vec4(uColor * head, mask * uAlpha);
+          float aa = clamp(uAntialias, 0.0, 1.0);
+          float edge = 1.0 - smoothstep(1.0 - aa * 0.28, 1.0, d);
+          float core = exp(-d * mix(9.0, 4.2, aa));
+          float halo = exp(-d * mix(2.4, 1.05, aa)) * mix(0.18, 0.42, aa);
+          float head = mix(0.62, 1.1, vAge);
+          vec3 phosphor = uPhosphorColor * (core + halo) * edge * uIntensity * head;
+          outColor = vec4(phosphor, (core + halo) * edge);
         }`;
 
-      const gridProgram = createProgram(vertFull, fragGrid);
-      const lineProgram = createProgram(vertTrace, fragLine);
-      const pointProgram = createProgram(vertTrace, fragPoint);
+      const fragTraceLine = `#version 300 es
+        precision highp float;
+        uniform float uIntensity;
+        uniform float uAntialias;
+        uniform vec3 uPhosphorColor;
+        in float vAge;
+        out vec4 outColor;
+        void main() {
+          float aa = clamp(uAntialias, 0.0, 1.0);
+          float head = mix(0.46, 0.95, vAge);
+          float body = mix(0.18, 0.42, aa);
+          vec3 phosphor = uPhosphorColor * uIntensity * head * body;
+          outColor = vec4(phosphor, body);
+        }`;
+
+      const fragPresent = `#version 300 es
+        precision highp float;
+        uniform sampler2D uTex;
+        uniform sampler2D uBloom;
+        uniform vec2 uResolution;
+        uniform vec3 uPhosphorColor;
+        uniform float uBloomStrength;
+        in vec2 vUv;
+        out vec4 outColor;
+
+        float lineGrid(float p, float scale, float width) {
+          float g = abs(fract(p * scale - 0.5) - 0.5) / fwidth(p * scale);
+          return 1.0 - smoothstep(width, width + 1.0, g);
+        }
+
+        void main() {
+          vec3 base = texture(uTex, vUv).rgb;
+          vec3 bloom = texture(uBloom, vUv).rgb;
+
+          vec2 scope = vUv * 2.0 - 1.0;
+          float roundMask = 1.0 - smoothstep(0.92, 1.24, length(scope * vec2(1.0, 0.92)));
+          float gridMinor = max(lineGrid(scope.x, 10.0, 0.42), lineGrid(scope.y, 10.0, 0.42));
+          float gridMajor = max(lineGrid(scope.x, 2.0, 0.78), lineGrid(scope.y, 2.0, 0.78));
+          float center = max(1.0 - smoothstep(0.0, 0.008, abs(scope.x)), 1.0 - smoothstep(0.0, 0.008, abs(scope.y)));
+          float vignette = 1.0 - smoothstep(0.22, 1.18, length(scope * vec2(1.0, 0.86)));
+          float scan = 0.94 + 0.06 * sin(gl_FragCoord.y * 2.35);
+
+          vec3 bg = vec3(0.006, 0.014, 0.012);
+          vec3 gridTint = mix(vec3(0.04, 0.36, 0.19), uPhosphorColor, 0.42);
+          vec3 grid = gridTint * gridMinor * 0.55 + gridTint * gridMajor * 1.05 + uPhosphorColor * center * 0.42;
+          vec3 phosphor = base * 1.48 + bloom * uBloomStrength;
+          vec3 color = bg + grid * roundMask * 0.45 + phosphor * roundMask;
+          color *= vignette * scan;
+          color += vec3(0.01, 0.035, 0.025) * (1.0 - roundMask);
+          outColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+        }`;
+
+      const fragBloom = `#version 300 es
+        precision highp float;
+        uniform sampler2D uSource;
+        uniform vec2 uResolution;
+        uniform vec2 uDirection;
+        uniform int uExtract;
+        in vec2 vUv;
+        out vec4 outColor;
+
+        vec3 sourceColor(vec2 uv) {
+          vec3 c = texture(uSource, uv).rgb;
+          if (uExtract == 1) {
+            float bright = max(max(c.r, c.g), c.b);
+            c = max(c - vec3(0.035), vec3(0.0)) * smoothstep(0.025, 0.22, bright);
+          }
+          return c;
+        }
+
+        void main() {
+          vec2 stepUv = uDirection / uResolution;
+          vec3 color = sourceColor(vUv) * 0.227027;
+          color += sourceColor(vUv + stepUv * 1.384615) * 0.316216;
+          color += sourceColor(vUv - stepUv * 1.384615) * 0.316216;
+          color += sourceColor(vUv + stepUv * 3.230769) * 0.070270;
+          color += sourceColor(vUv - stepUv * 3.230769) * 0.070270;
+          outColor = vec4(color, 1.0);
+        }`;
+
+      function compile(type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          throw new Error(gl.getShaderInfoLog(shader) || "Shader compilation failed");
+        }
+        return shader;
+      }
+
+      function program(vs, fs) {
+        const p = gl.createProgram();
+        gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
+        gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(p);
+        if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+          throw new Error(gl.getProgramInfoLog(p) || "Program link failed");
+        }
+        return p;
+      }
+
+      const fadeProgram = program(vertFull, fragFade);
+      const traceProgram = program(vertTrace, fragTrace);
+      const lineTraceProgram = program(vertTrace, fragTraceLine);
+      const bloomProgram = program(vertFull, fragBloom);
+      const presentProgram = program(vertFull, fragPresent);
+      const vao = gl.createVertexArray();
+      gl.bindVertexArray(vao);
+
       const loc = {
-        grid: {
-          resolution: gl.getUniformLocation(gridProgram, "uResolution")
+        fade: {
+          prev: gl.getUniformLocation(fadeProgram, "uPrev"),
+          decay: gl.getUniformLocation(fadeProgram, "uDecay")
         },
-        line: getTraceLocations(lineProgram),
-        point: getTraceLocations(pointProgram)
+        trace: {
+          time: gl.getUniformLocation(traceProgram, "uTime"),
+          traceWindow: gl.getUniformLocation(traceProgram, "uTraceWindow"),
+          sampleCount: gl.getUniformLocation(traceProgram, "uSampleCount"),
+          pointSize: gl.getUniformLocation(traceProgram, "uPointSize"),
+          oscX: gl.getUniformLocation(traceProgram, "uOscX"),
+          oscY: gl.getUniformLocation(traceProgram, "uOscY"),
+          waveX: gl.getUniformLocation(traceProgram, "uWaveX"),
+          waveY: gl.getUniformLocation(traceProgram, "uWaveY"),
+          intensity: gl.getUniformLocation(traceProgram, "uIntensity"),
+          antialias: gl.getUniformLocation(traceProgram, "uAntialias"),
+          phosphorColor: gl.getUniformLocation(traceProgram, "uPhosphorColor")
+        },
+        line: {
+          time: gl.getUniformLocation(lineTraceProgram, "uTime"),
+          traceWindow: gl.getUniformLocation(lineTraceProgram, "uTraceWindow"),
+          sampleCount: gl.getUniformLocation(lineTraceProgram, "uSampleCount"),
+          pointSize: gl.getUniformLocation(lineTraceProgram, "uPointSize"),
+          oscX: gl.getUniformLocation(lineTraceProgram, "uOscX"),
+          oscY: gl.getUniformLocation(lineTraceProgram, "uOscY"),
+          waveX: gl.getUniformLocation(lineTraceProgram, "uWaveX"),
+          waveY: gl.getUniformLocation(lineTraceProgram, "uWaveY"),
+          intensity: gl.getUniformLocation(lineTraceProgram, "uIntensity"),
+          antialias: gl.getUniformLocation(lineTraceProgram, "uAntialias"),
+          phosphorColor: gl.getUniformLocation(lineTraceProgram, "uPhosphorColor")
+        },
+        bloom: {
+          source: gl.getUniformLocation(bloomProgram, "uSource"),
+          resolution: gl.getUniformLocation(bloomProgram, "uResolution"),
+          direction: gl.getUniformLocation(bloomProgram, "uDirection"),
+          extract: gl.getUniformLocation(bloomProgram, "uExtract")
+        },
+        present: {
+          tex: gl.getUniformLocation(presentProgram, "uTex"),
+          bloom: gl.getUniformLocation(presentProgram, "uBloom"),
+          resolution: gl.getUniformLocation(presentProgram, "uResolution"),
+          phosphorColor: gl.getUniformLocation(presentProgram, "uPhosphorColor"),
+          bloomStrength: gl.getUniformLocation(presentProgram, "uBloomStrength")
+        }
       };
 
+      const buffers = [
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() },
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() }
+      ];
+      const bloomBuffers = [
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() },
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() }
+      ];
+      const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) || 4096;
+      const exportMaxDimension = Math.min(4096, maxTextureSize);
+      let readIndex = 0;
       let width = 0;
       let height = 0;
-      let lastNow = 0;
+      let bloomWidth = 0;
+      let bloomHeight = 0;
       let simTime = 0;
-      let currentComparison = computeComparison();
-
-      function buildKeyRange(minMidi, maxMidi) {
-        const notes = [];
-        for (let midi = minMidi; midi <= maxMidi; midi++) {
-          notes.push({ midi, note: midiToNote(midi), name: NOTE_NAMES[midi % 12] });
-        }
-        return notes;
-      }
-
-      function midiToNote(midi) {
-        return `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
-      }
-
-      function noteToMidi(note) {
-        const octave = Number(note.slice(-1));
-        const name = note.slice(0, -1);
-        const index = NOTE_NAMES.indexOf(name);
-        return (octave + 1) * 12 + index;
       let lastNow = performance.now();
       let fpsLast = lastNow;
       let fpsFrames = 0;
@@ -1797,8 +1567,6 @@
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.tex, 0);
       }
 
-      function equalFrequency(note) {
-        return 440 * Math.pow(2, (noteToMidi(note) - 69) / 12);
       // Clear each offscreen render target so resize/export paths start from a clean frame.
       function clearTargets(targets) {
         for (const target of targets) {
@@ -1808,24 +1576,6 @@
         }
       }
 
-      function signedJustInterval(delta) {
-        const direction = Math.sign(delta) || 1;
-        const abs = Math.abs(delta);
-        const base = JUST_BY_SEMITONES.get(abs) || JUST_BY_SEMITONES.get(abs % 12) || JUST_BY_SEMITONES.get(0);
-        const octaves = Math.floor(abs / 12);
-        const within = abs > 23 ? base.ratio * Math.pow(2, octaves) : base.ratio;
-        const ratio = direction < 0 ? 1 / within : within;
-        const label = direction < 0 ? invertRatioLabel(base.label) : base.label;
-        return { ...base, ratio, label };
-      }
-
-      function invertRatioLabel(label) {
-        const parts = label.split(":");
-        return parts.length === 2 ? `${parts[1]}:${parts[0]}` : label;
-      }
-
-      function equalRatio(delta) {
-        return Math.pow(2, delta / 12);
       // Keep the canvas, bloom buffers, and viewport aligned with the CSS pixel size and DPR.
       function resize() {
         const dpr = renderPixelRatio();
@@ -1853,59 +1603,6 @@
       const oscControls = { x: null, y: null };
       const presentationControls = { x: null, y: null };
 
-      function intervalName(delta) {
-        const abs = Math.abs(delta);
-        const base = JUST_BY_SEMITONES.get(abs) || JUST_BY_SEMITONES.get(abs % 12) || JUST_BY_SEMITONES.get(0);
-        if (delta === 0) {
-          return base.name;
-        }
-        return `${base.name} ${delta > 0 ? "up" : "down"}`;
-      }
-
-      function computeComparison() {
-        const xMidi = noteToMidi(state.xNote);
-        const yMidi = noteToMidi(state.yNote);
-        const semitones = yMidi - xMidi;
-        const xFreq = equalFrequency(state.xNote);
-        const eqRatio = equalRatio(semitones);
-        const just = signedJustInterval(semitones);
-        const equalY = xFreq * eqRatio;
-        const justY = xFreq * just.ratio;
-        const centsDelta = 1200 * Math.log2(justY / equalY);
-        const hzDelta = justY - equalY;
-        return {
-          xMidi,
-          yMidi,
-          semitones,
-          xFreq,
-          eqRatio,
-          justRatio: just.ratio,
-          justLabel: just.label,
-          equalY,
-          justY,
-          hzDelta,
-          centsDelta,
-          intervalLabel: intervalName(semitones)
-        };
-      }
-
-      function formatHz(value) {
-        return `${value.toFixed(2)} Hz`;
-      }
-
-      function formatSigned(value, unit, digits = 2) {
-        const sign = value > 0 ? "+" : "";
-        return `${sign}${value.toFixed(digits)} ${unit}`;
-      }
-
-      function renderKeyboard(target, role) {
-        const whiteLayer = document.createElement("div");
-        whiteLayer.className = "whiteKeys";
-        target.appendChild(whiteLayer);
-
-        let whiteIndex = 0;
-        for (const key of KEY_RANGE) {
-          const button = document.createElement("button");
       // Wire up the inline help icons and keep their tooltips positioned and mutually exclusive.
       function setupHelpTips() {
         const tips = [];
@@ -1981,32 +1678,6 @@
           wrap.dataset.open = "false";
           button.className = "helpButton";
           button.type = "button";
-          button.className = `key ${WHITE_NAMES.has(key.name) ? "whiteKey" : "blackKey"}`;
-          button.dataset.note = key.note;
-          button.setAttribute("aria-label", `${role === "x" ? "Oscillator X root" : "Oscillator Y target"} ${key.note}`);
-          button.setAttribute("aria-pressed", "false");
-          button.textContent = WHITE_NAMES.has(key.name) ? key.note : key.name;
-          button.addEventListener("click", () => {
-            if (role === "x") {
-              state.xNote = key.note;
-            } else {
-              state.yNote = key.note;
-            }
-            syncAll();
-          });
-
-          if (WHITE_NAMES.has(key.name)) {
-            whiteLayer.appendChild(button);
-            whiteIndex++;
-          } else {
-            const octaveOffset = Math.floor((key.midi - 48) / 12) * 7;
-            const octaveName = key.name;
-            const leftUnits = octaveOffset + BLACK_OFFSETS.get(octaveName);
-            button.style.left = `calc(${leftUnits} * (100% / 14) - 2.6%)`;
-            target.appendChild(button);
-          }
-        }
-      }
           button.textContent = "i";
           button.setAttribute("aria-label", `Show help for ${help.title}`);
           button.setAttribute("aria-expanded", "false");
@@ -2037,13 +1708,6 @@
           });
         }
 
-      function syncKeyboards() {
-        for (const button of document.querySelectorAll("#keyboardX .key")) {
-          button.setAttribute("aria-pressed", button.dataset.note === state.xNote ? "true" : "false");
-        }
-        for (const button of document.querySelectorAll("#keyboardY .key")) {
-          button.setAttribute("aria-pressed", button.dataset.note === state.yNote ? "true" : "false");
-        }
         // Any outside interaction should dismiss help overlays so they do not linger on screen.
         document.addEventListener("click", () => closeAll(null));
         document.addEventListener("keydown", event => {
@@ -2055,10 +1719,6 @@
         document.querySelector("aside").addEventListener("scroll", () => closeAll(null), { passive: true });
       }
 
-      function syncButtons(containerId, attr, active) {
-        for (const button of document.querySelectorAll(`#${containerId} [data-${attr}]`)) {
-          button.setAttribute("aria-pressed", button.dataset[attr] === active ? "true" : "false");
-        }
       // Clamp frequency input to the configured range, or fall back to the previous valid value.
       function clampFrequency(value, fallback) {
         if (!Number.isFinite(value)) {
@@ -2067,20 +1727,6 @@
         return Math.min(FREQ_MAX, Math.max(FREQ_MIN, value));
       }
 
-      function syncReadouts() {
-        currentComparison = computeComparison();
-        els.xSummary.textContent = `${state.xNote} - ${formatHz(currentComparison.xFreq)}`;
-        els.ySummary.textContent = state.yNote;
-        els.intervalSummary.textContent = `${currentComparison.intervalLabel} (${currentComparison.semitones} st)`;
-        els.deltaSummary.textContent = formatSigned(currentComparison.centsDelta, "cents");
-        els.xNoteLabel.textContent = state.xNote;
-        els.yNoteLabel.textContent = state.yNote;
-        els.equalRatio.textContent = currentComparison.eqRatio.toFixed(6);
-        els.justRatio.textContent = currentComparison.justLabel;
-        els.equalY.textContent = formatHz(currentComparison.equalY);
-        els.justY.textContent = formatHz(currentComparison.justY);
-        els.hzDelta.textContent = formatSigned(currentComparison.hzDelta, "Hz");
-        els.centsDelta.textContent = formatSigned(currentComparison.centsDelta, "cents");
       // Clamp phase-modulation rate input to the configured range, or fall back to the previous valid value.
       function clampPhaseModRate(value, fallback) {
         if (!Number.isFinite(value)) {
@@ -2113,72 +1759,40 @@
         return 440 * Math.pow(2, (midi - 69) / 12);
       }
 
-      function syncAudioVisibility() {
-        const group = document.getElementById("audioTemperament");
-        group.classList.toggle("hidden", state.viewMode !== "both");
-        els.volumeControl.classList.toggle("hidden", !state.audioEnabled);
-        if (state.viewMode !== "both") {
-          state.audioTemperament = state.viewMode;
+      function noteToMidi(note) {
+        const octave = Number(note.slice(-1));
+        const name = note.slice(0, -1);
+        const noteIndex = NOTE_NAMES.indexOf(name);
+        if (noteIndex < 0 || !Number.isFinite(octave)) {
+          return -1;
         }
-        syncButtons("audioTemperament", "audio", state.audioTemperament);
+        return (octave + 1) * 12 + noteIndex;
       }
 
-      function syncVolumeReadout() {
-        const percent = Math.round(state.volume * 100);
-        els.volumeSlider.value = String(percent);
-        els.volumeValue.textContent = `${percent}%`;
+      function intervalRatio(value) {
+        const interval = INTERVAL_BY_VALUE.get(value) || INTERVALS[0];
+        return state.tuning.temperament === "just" ? interval.just : Math.pow(2, interval.semitones / 12);
       }
 
-      function syncAll() {
-        els.visualPanel.dataset.view = state.viewMode;
-        syncButtons("viewMode", "view", state.viewMode);
-        syncAudioVisibility();
-        syncVolumeReadout();
-        syncReadouts();
-        syncKeyboards();
-        updateAudioFrequencies();
-        updateAudioVolume();
+      function midiToNote(midi) {
+        const clamped = Math.min(MAX_NOTE_MIDI, Math.max(MIN_NOTE_MIDI, midi));
+        return `${NOTE_NAMES[clamped % 12]}${Math.floor(clamped / 12) - 1}`;
       }
 
-      function compile(type, source) {
-        const shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-          throw new Error(gl.getShaderInfoLog(shader) || "Shader compilation failed");
+      function populateMusicSelects(section) {
+        const noteSelect = section.querySelector("[data-param='note']");
+        const noteOptions = document.createDocumentFragment();
+        for (let octave = 0; octave <= 8; octave++) {
+          for (const note of NOTE_NAMES) {
+            const option = document.createElement("option");
+            option.value = `${note}${octave}`;
+            option.textContent = `${note}${octave}`;
+            noteOptions.appendChild(option);
+          }
         }
-        return shader;
+        noteSelect.appendChild(noteOptions);
       }
 
-      function createProgram(vertexSource, fragmentSource) {
-        const program = gl.createProgram();
-        gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSource));
-        gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSource));
-        gl.linkProgram(program);
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-          throw new Error(gl.getProgramInfoLog(program) || "Program link failed");
-        }
-        return program;
-      }
-
-      function getTraceLocations(program) {
-        return {
-          time: gl.getUniformLocation(program, "uTime"),
-          traceWindow: gl.getUniformLocation(program, "uTraceWindow"),
-          sampleCount: gl.getUniformLocation(program, "uSampleCount"),
-          pointSize: gl.getUniformLocation(program, "uPointSize"),
-          xFreq: gl.getUniformLocation(program, "uXFreq"),
-          yFreq: gl.getUniformLocation(program, "uYFreq"),
-          color: gl.getUniformLocation(program, "uColor"),
-          alpha: gl.getUniformLocation(program, "uAlpha")
-        };
-      }
-
-      function resize() {
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const nextWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr));
-        const nextHeight = Math.max(1, Math.floor(canvas.clientHeight * dpr));
-        if (nextWidth === width && nextHeight === height) {
       function populateGlobalInterval() {
         const intervalSelect = document.getElementById("globalInterval");
         const intervalOptions = document.createDocumentFragment();
@@ -2231,43 +1845,63 @@
         if (!controls) {
           return;
         }
-        width = nextWidth;
-        height = nextHeight;
-        canvas.width = width;
-        canvas.height = height;
+        const model = state[osc];
+        controls.note.value = model.note;
+        controls.note.disabled = state.tuning.freqMode === "hz";
       }
 
-      function drawBackground(targetWidth, targetHeight) {
-        gl.disable(gl.BLEND);
-        gl.useProgram(gridProgram);
-        gl.uniform2f(loc.grid.resolution, targetWidth, targetHeight);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      function syncGlobalModeControls() {
+        const mode = document.getElementById("frequencyMode");
+        const interval = document.getElementById("globalInterval");
+        mode.value = state.tuning.freqMode;
+        interval.value = state.tuning.interval;
+        interval.disabled = state.tuning.freqMode !== "interval";
+        syncModeControls("x");
+        syncModeControls("y");
       }
 
-      function setTraceUniforms(programLoc, xFreq, yFreq, color, alpha, time, pointSize) {
-        gl.uniform1f(programLoc.time, time);
-        gl.uniform1f(programLoc.traceWindow, state.traceWindow);
-        gl.uniform1f(programLoc.sampleCount, state.samples);
-        gl.uniform1f(programLoc.pointSize, pointSize);
-        gl.uniform1f(programLoc.xFreq, xFreq);
-        gl.uniform1f(programLoc.yFreq, yFreq);
-        gl.uniform3f(programLoc.color, color[0], color[1], color[2]);
-        gl.uniform1f(programLoc.alpha, alpha);
+      function setOscFrequency(osc, value) {
+        state[osc].freq = clampFrequency(value, state[osc].freq);
+        syncFrequencyControls(osc);
       }
 
-      function drawTrace(xFreq, yFreq, color, alpha, time, pointSize) {
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      function applyNoteMode() {
+        setOscFrequency("x", noteFrequency(state.x.note));
+        setOscFrequency("y", noteFrequency(state.y.note));
+      }
 
-        gl.useProgram(lineProgram);
-        setTraceUniforms(loc.line, xFreq, yFreq, color, alpha, time, pointSize);
-        gl.drawArrays(gl.LINE_STRIP, 0, state.samples);
+      function applyIntervalMode(anchor = "x") {
+        const interval = INTERVAL_BY_VALUE.get(state.tuning.interval) || INTERVALS[0];
+        if (anchor === "y") {
+          state.x.note = midiToNote(noteToMidi(state.y.note) - interval.semitones);
+        } else {
+          state.y.note = midiToNote(noteToMidi(state.x.note) + interval.semitones);
+        }
+        setOscFrequency("x", noteFrequency(state.x.note));
+        setOscFrequency("y", state.x.freq * intervalRatio(state.tuning.interval));
+        syncModeControls("x");
+        syncModeControls("y");
+      }
 
-        gl.useProgram(pointProgram);
-        setTraceUniforms(loc.point, xFreq, yFreq, color, alpha * 0.34, time, pointSize);
-        gl.drawArrays(gl.POINTS, 0, state.samples);
+      function applyGlobalFrequencyMode(anchor = "x") {
+        if (state.tuning.freqMode === "note") {
+          applyNoteMode();
+        } else if (state.tuning.freqMode === "interval") {
+          applyIntervalMode(anchor);
+        } else {
+          syncFrequencyControls("x");
+          syncFrequencyControls("y");
+        }
+      }
 
-        gl.disable(gl.BLEND);
+      function bindNumberControl(input, out, getter, setter, format) {
+        const update = () => {
+          const value = Number(input.value);
+          setter(value);
+          out.textContent = format(value);
+        };
+        input.addEventListener("input", update, { passive: true });
+        update();
       }
 
       function syncPhaseModControls() {
@@ -2307,88 +1941,23 @@
         syncPhaseModControls();
       }
 
-      function drawPane(x, y, paneWidth, paneHeight, xFreq, yFreq, color, alpha, time, pointScale) {
-        gl.viewport(x, y, paneWidth, paneHeight);
-        drawBackground(paneWidth, paneHeight);
-        drawTrace(xFreq, yFreq, color, alpha, time, state.pointSize * pointScale);
-      }
-
-      function drawScene(targetFb, targetWidth, targetHeight, time, pointScale = 1) {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, targetFb);
-        gl.viewport(0, 0, targetWidth, targetHeight);
-        gl.disable(gl.BLEND);
-        gl.clearColor(1, 1, 1, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-
-        const comparison = currentComparison;
-        const equalColor = [0 / 255, 172 / 255, 193 / 255];
-        const justColor = [249 / 255, 171 / 255, 0 / 255];
-
-        if (state.viewMode === "both") {
-          const gap = Math.max(10, Math.round(Math.min(targetWidth * 0.018, 24) * pointScale));
-          const paneWidth = Math.floor((targetWidth - gap) / 2);
-          const rightX = paneWidth + gap;
-          drawPane(0, 0, paneWidth, targetHeight, comparison.xFreq, comparison.equalY, equalColor, 0.9, time, pointScale);
-          drawPane(rightX, 0, targetWidth - rightX, targetHeight, comparison.xFreq, comparison.justY, justColor, 0.9, time, pointScale);
-          return;
+      function hexToRgb(hex) {
+        const raw = hex.replace("#", "");
+        const value = Number.parseInt(raw.length === 3 ? raw.replace(/./g, c => c + c) : raw, 16);
+        if (!Number.isFinite(value)) {
+          return state.phosphorColor;
         }
-
-        if (state.viewMode === "equal") {
-          drawPane(0, 0, targetWidth, targetHeight, comparison.xFreq, comparison.equalY, equalColor, 0.9, time, pointScale);
-          return;
-        }
-
-        drawPane(0, 0, targetWidth, targetHeight, comparison.xFreq, comparison.justY, justColor, 0.9, time, pointScale);
+        return [
+          ((value >> 16) & 255) / 255,
+          ((value >> 8) & 255) / 255,
+          (value & 255) / 255
+        ];
       }
 
-      function render(now) {
-        resize();
-        const dt = Math.min((now - lastNow) * 0.001, 0.05);
-        lastNow = now;
-        simTime += dt;
-        drawScene(null, width, height, simTime, Math.min(window.devicePixelRatio || 1, 2));
-        requestAnimationFrame(render);
+      function rgbToHex(rgb) {
+        return `#${rgb.map(value => Math.round(Math.min(1, Math.max(0, value)) * 255).toString(16).padStart(2, "0")).join("")}`;
       }
 
-      async function saveComparisonImage() {
-        resize();
-        els.saveImage.disabled = true;
-        els.exportStatus.textContent = "Rendering comparison image...";
-        try {
-          drawScene(null, width, height, simTime, Math.min(window.devicePixelRatio || 1, 2));
-          const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
-          if (!blob) {
-            throw new Error("PNG encoding failed");
-          }
-          const link = document.createElement("a");
-          const url = URL.createObjectURL(blob);
-          link.href = url;
-          link.download = `interval-temperament-${new Date().toISOString().replace(/[:.]/g, "-")}.png`;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 1500);
-          els.exportStatus.textContent = `Saved ${canvas.width} x ${canvas.height} comparison image.`;
-        } catch (error) {
-          els.exportStatus.textContent = error instanceof Error ? error.message : "Export failed.";
-        } finally {
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-          els.saveImage.disabled = false;
-        }
-      }
-
-      function createSoftClipCurve(size = 2048, drive = 1.7) {
-        const curve = new Float32Array(size);
-        const normalizer = Math.tanh(drive);
-        for (let i = 0; i < size; i++) {
-          const x = (i / (size - 1)) * 2 - 1;
-          curve[i] = Math.tanh(x * drive) / normalizer;
-        }
-        return curve;
-      }
-
-      function volumeToGain(value) {
-        return Math.pow(Math.max(0, Math.min(1, value)), 1.45) * 0.14;
       function wireOsc(section, osc) {
         const model = state[osc];
         const wave = section.querySelector("[data-param='wave']");
@@ -2581,43 +2150,6 @@
         });
       }
 
-      function updateAudioVolume() {
-        if (!audio.ctx || !audio.gain) {
-          return;
-        }
-        audio.gain.gain.setTargetAtTime(volumeToGain(state.volume), audio.ctx.currentTime, 0.02);
-      }
-
-      async function enableAudio() {
-        if (!audio.ctx) {
-          const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-          audio.ctx = new AudioContextCtor();
-          audio.gain = audio.ctx.createGain();
-          audio.gain.gain.value = volumeToGain(state.volume);
-          audio.gain.connect(audio.ctx.destination);
-          audio.xOsc = audio.ctx.createOscillator();
-          audio.yOsc = audio.ctx.createOscillator();
-          audio.xShaper = audio.ctx.createWaveShaper();
-          audio.yShaper = audio.ctx.createWaveShaper();
-          const softClipCurve = createSoftClipCurve();
-          audio.xShaper.curve = softClipCurve;
-          audio.yShaper.curve = softClipCurve;
-          audio.xShaper.oversample = "2x";
-          audio.yShaper.oversample = "2x";
-          audio.xOsc.type = "sine";
-          audio.yOsc.type = "sine";
-          audio.xOsc.connect(audio.xShaper).connect(audio.gain);
-          audio.yOsc.connect(audio.yShaper).connect(audio.gain);
-          audio.xOsc.start();
-          audio.yOsc.start();
-        }
-        await audio.ctx.resume();
-        state.audioEnabled = true;
-        updateAudioFrequencies();
-        updateAudioVolume();
-        syncAudioVisibility();
-        syncVolumeReadout();
-        els.toggleAudio.textContent = "Disable audio";
       setupHelpTips();
       wireOsc(document.querySelector("[data-osc='x']"), "x");
       wireOsc(document.querySelector("[data-osc='y']"), "y");
@@ -2704,75 +2236,157 @@
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       }
 
-      function disableAudio() {
-        if (audio.ctx) {
-          audio.ctx.suspend();
-        }
-        state.audioEnabled = false;
-        syncAudioVisibility();
-        els.toggleAudio.textContent = "Enable audio";
-        els.audioStatus.textContent = "Audio is off.";
+      function presentFrame(sourceTex, bloomTex, targetFb, targetWidth, targetHeight) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, targetFb);
+        gl.viewport(0, 0, targetWidth, targetHeight);
+        gl.disable(gl.BLEND);
+        gl.useProgram(presentProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, sourceTex);
+        gl.uniform1i(loc.present.tex, 0);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, bloomTex);
+        gl.uniform1i(loc.present.bloom, 1);
+        gl.uniform2f(loc.present.resolution, targetWidth, targetHeight);
+        gl.uniform3f(loc.present.phosphorColor, state.phosphorColor[0], state.phosphorColor[1], state.phosphorColor[2]);
+        gl.uniform1f(loc.present.bloomStrength, state.bloom);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
       }
 
-      function updateAudioFrequencies() {
-        if (!audio.ctx || !state.audioEnabled) {
-          return;
+      function createRenderTarget(targetWidth, targetHeight) {
+        const target = { tex: gl.createTexture(), fb: gl.createFramebuffer() };
+        configureTexture(target, targetWidth, targetHeight);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
+        const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if (status !== gl.FRAMEBUFFER_COMPLETE) {
+          throw new Error(`Framebuffer is not complete (${status})`);
         }
-        const now = audio.ctx.currentTime;
-        const yFreq = state.audioTemperament === "just" ? currentComparison.justY : currentComparison.equalY;
-        audio.xOsc.frequency.setTargetAtTime(currentComparison.xFreq, now, 0.015);
-        audio.yOsc.frequency.setTargetAtTime(yFreq, now, 0.015);
-        const label = state.audioTemperament === "just" ? "just intonation" : "equal temperament";
-        els.audioStatus.textContent = `Audio is playing X plus ${label} Y.`;
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        return target;
       }
 
-      renderKeyboard(document.getElementById("keyboardX"), "x");
-      renderKeyboard(document.getElementById("keyboardY"), "y");
+      function deleteRenderTarget(target) {
+        gl.deleteFramebuffer(target.fb);
+        gl.deleteTexture(target.tex);
+      }
 
-      document.getElementById("viewMode").addEventListener("click", event => {
-        const button = event.target.closest("[data-view]");
-        if (!button) return;
-        state.viewMode = button.dataset.view;
-        if (state.viewMode !== "both") {
-          state.audioTemperament = state.viewMode;
+      function pixelsToPngBlob(pixels, targetWidth, targetHeight) {
+        const flipped = new Uint8ClampedArray(pixels.length);
+        const stride = targetWidth * 4;
+        for (let y = 0; y < targetHeight; y++) {
+          const sourceStart = (targetHeight - 1 - y) * stride;
+          const destStart = y * stride;
+          flipped.set(pixels.subarray(sourceStart, sourceStart + stride), destStart);
         }
-        syncAll();
-      });
+        const image = new ImageData(flipped, targetWidth, targetHeight);
+        const outputCanvas = document.createElement("canvas");
+        outputCanvas.width = targetWidth;
+        outputCanvas.height = targetHeight;
+        const ctx = outputCanvas.getContext("2d");
+        ctx.putImageData(image, 0, 0);
+        return new Promise(resolve => outputCanvas.toBlob(resolve, "image/png"));
+      }
 
-      document.getElementById("audioTemperament").addEventListener("click", event => {
-        const button = event.target.closest("[data-audio]");
-        if (!button) return;
-        state.audioTemperament = button.dataset.audio;
-        syncAll();
-      });
+      function triggerDownload(blob, filename) {
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
 
-      els.volumeSlider.addEventListener("input", () => {
-        state.volume = Number(els.volumeSlider.value) / 100;
-        syncVolumeReadout();
-        updateAudioVolume();
-      });
-
-      els.keyboardInfoButton.addEventListener("click", () => {
-        const isOpen = els.keyboardInfoButton.getAttribute("aria-expanded") === "true";
-        els.keyboardInfoButton.setAttribute("aria-expanded", isOpen ? "false" : "true");
-        els.keyboardInfoText.classList.toggle("hidden", isOpen);
-      });
-
-      els.toggleAudio.addEventListener("click", () => {
-        if (state.audioEnabled) {
-          disableAudio();
-        } else {
-          enableAudio().catch(error => {
-            els.audioStatus.textContent = error instanceof Error ? error.message : "Audio could not start.";
-          });
+      async function saveExportImage() {
+        resize();
+        savePng.disabled = true;
+        exportStatus.textContent = "Rendering export...";
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const requestedWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr * state.exportScale));
+        const requestedHeight = Math.max(1, Math.floor(canvas.clientHeight * dpr * state.exportScale));
+        const capScale = Math.min(1, exportMaxDimension / Math.max(requestedWidth, requestedHeight));
+        const exportWidth = Math.max(1, Math.floor(requestedWidth * capScale));
+        const exportHeight = Math.max(1, Math.floor(requestedHeight * capScale));
+        const bloomExportWidth = Math.max(1, Math.floor(exportWidth * 0.5));
+        const bloomExportHeight = Math.max(1, Math.floor(exportHeight * 0.5));
+        const exportSamples = Math.max(state.samples, state.exportSamples) | 0;
+        const targets = [];
+        try {
+          const read = createRenderTarget(exportWidth, exportHeight);
+          const write = createRenderTarget(exportWidth, exportHeight);
+          const finalTarget = createRenderTarget(exportWidth, exportHeight);
+          const bloomA = createRenderTarget(bloomExportWidth, bloomExportHeight);
+          const bloomB = createRenderTarget(bloomExportWidth, bloomExportHeight);
+          targets.push(read, write, finalTarget, bloomA, bloomB);
+          const pointScale = state.focus * dpr * state.exportScale * capScale;
+          drawAccumulatedFrame(read.tex, write.fb, exportWidth, exportHeight, exportSamples, pointScale, simTime, 1.0);
+          drawBloom(write.tex, [bloomA, bloomB], bloomExportWidth, bloomExportHeight);
+          presentFrame(write.tex, bloomB.tex, finalTarget.fb, exportWidth, exportHeight);
+          const pixels = new Uint8Array(exportWidth * exportHeight * 4);
+          gl.readPixels(0, 0, exportWidth, exportHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+          const blob = await pixelsToPngBlob(pixels, exportWidth, exportHeight);
+          if (!blob) {
+            throw new Error("PNG encoding failed");
+          }
+          const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+          triggerDownload(blob, `waveform-visualizer-${stamp}.png`);
+          exportStatus.textContent = `Saved ${exportWidth} x ${exportHeight} / ${exportSamples} samples${capScale < 1 ? " (capped)" : ""}`;
+        } catch (error) {
+          exportStatus.textContent = error instanceof Error ? error.message : "Export failed";
+        } finally {
+          for (const target of targets) {
+            deleteRenderTarget(target);
+          }
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          savePng.disabled = false;
         }
-      });
+      }
 
-      els.saveImage.addEventListener("click", saveComparisonImage);
+      function render(now) {
+        resize();
+        const dt = Math.min((now - lastNow) * 0.001, 0.05);
+        lastNow = now;
+        if (!state.frozen) {
+          simTime += dt;
+        }
+
+        const read = buffers[readIndex];
+        const write = buffers[1 - readIndex];
+
+        drawAccumulatedFrame(
+          read.tex,
+          write.fb,
+          width,
+          height,
+          state.samples,
+          state.focus * renderPixelRatio(),
+          simTime,
+          state.frozen ? 1.0 : state.persistence
+        );
+
+        readIndex = 1 - readIndex;
+        drawBloom(write.tex, bloomBuffers, bloomWidth, bloomHeight);
+        presentFrame(write.tex, bloomBuffers[1].tex, null, width, height);
+
+        fpsFrames++;
+        if (now - fpsLast > 350) {
+          const fps = Math.round((fpsFrames * 1000) / (now - fpsLast));
+          fpsFrames = 0;
+          fpsLast = now;
+          fpsText.textContent = String(fps);
+          sampleText.textContent = String(state.samples);
+          traceReadout.textContent = `X ${state.x.freq.toFixed(2)} Hz  /  Y ${state.y.freq.toFixed(2)} Hz`;
+          perfReadout.textContent = `${fps} fps  /  ${state.samples} samples`;
+        }
+
+        requestAnimationFrame(render);
+      }
+
       window.addEventListener("resize", resize, { passive: true });
       window.visualViewport?.addEventListener("resize", resize, { passive: true });
-
-      syncAll();
+      savePng.addEventListener("click", saveExportImage);
       requestAnimationFrame(render);
     })();
   </script>
