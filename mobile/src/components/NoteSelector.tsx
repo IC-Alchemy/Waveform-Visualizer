@@ -2,10 +2,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { NOTE_RANGE, type NoteName } from "../model/comparison";
 import type { AppTheme } from "../model/ui";
 
-const WHITE_KEY_WIDTH = 34;
-const WHITE_KEY_HEIGHT = 72;
-const BLACK_KEY_WIDTH = 22;
-const BLACK_KEY_HEIGHT = 46;
+const WHITE_KEY_WIDTH = 30;
+const WHITE_KEY_HEIGHT = 58;
+const BLACK_KEY_WIDTH = 20;
+const BLACK_KEY_HEIGHT = 37;
 
 interface NoteSelectorProps {
   label: string;
@@ -116,11 +116,12 @@ function blackKeyLeftOffset(midi: number, whiteKeys: typeof NOTE_RANGE) {
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: 8,
+    gap: 5,
   },
   title: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "800",
+    textTransform: "uppercase",
   },
   scrollContent: {
     paddingRight: 4,
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 4,
     borderBottomLeftRadius: 5,
     borderBottomRightRadius: 5,
-    paddingBottom: 8,
+    paddingBottom: 6,
     overflow: "hidden",
   },
   blackKey: {
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 5,
     borderTopLeftRadius: 2,
     borderTopRightRadius: 2,
-    paddingBottom: 5,
+    paddingBottom: 4,
     overflow: "hidden",
   },
   selectedKey: {
@@ -179,10 +180,10 @@ const styles = StyleSheet.create({
   },
   whiteSelectedIndicator: {
     position: "absolute",
-    left: 4,
-    right: 4,
-    top: 5,
-    height: 6,
+    left: 5,
+    right: 5,
+    top: 4,
+    height: 5,
     borderRadius: 999,
   },
   blackSelectedIndicator: {
@@ -190,15 +191,15 @@ const styles = StyleSheet.create({
     left: 4,
     right: 4,
     top: 4,
-    height: 4,
+    height: 3,
     borderRadius: 999,
   },
   whiteKeyText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "900",
   },
   blackKeyText: {
-    fontSize: 8,
+    fontSize: 7,
     fontWeight: "900",
   },
 });

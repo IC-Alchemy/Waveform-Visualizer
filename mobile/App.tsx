@@ -6,10 +6,12 @@ import * as Sharing from "expo-sharing";
 import { useMemo, useRef, useState } from "react";
 import {
   Alert,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  StatusBar as NativeStatusBar,
   Text,
   View,
   useWindowDimensions,
@@ -57,9 +59,9 @@ export default function App() {
   const useLandscapeLayout = shouldUseLandscapeLayout(dimensions, preferences.orientationMode);
   const visualizerHeight = useMemo(() => {
     if (useLandscapeLayout) {
-      return Math.max(340, Math.min(620, dimensions.height - 72));
+      return Math.max(190, Math.min(340, dimensions.height * 0.48));
     }
-    return Math.max(340, Math.min(520, dimensions.height * 0.54));
+    return Math.max(220, Math.min(340, dimensions.height * 0.32));
   }, [dimensions.height, useLandscapeLayout]);
   const audio = useAudioEngine({
     comparison,
@@ -184,47 +186,49 @@ export default function App() {
   const configurationStatus = loaded ? preferenceStatus : "Loading configuration...";
 
   const header = (
-    <View style={styles.header}>
-      <Text style={[styles.eyebrow, { color: theme.primary }]}>TEMPERAMENT SCOPE</Text>
+    <View style={[styles.header, { borderBottomColor: theme.divider }]}>
       <Text style={[styles.title, { color: theme.text }]}>Interval Temperament</Text>
-      <Text style={[styles.subtitle, { color: theme.textSubtle }]}>Equal / Just / Both</Text>
+      <Text style={[styles.subtitle, { color: theme.textSubtle }]}>Temperament scope</Text>
+    </View>
+  );
+
+  const pianoDeck = (
+    <View style={styles.pianoDeck}>
+      <NoteSelector
+        label="X root"
+        value={state.xNote}
+        accentColor={theme.equalAccent}
+        onChange={(note: NoteName) => updateState("xNote", note)}
+        theme={theme}
+      />
+      <NoteSelector
+        label="Y target"
+        value={state.yNote}
+        accentColor={theme.justAccent}
+        onChange={(note: NoteName) => updateState("yNote", note)}
+        theme={theme}
+      />
+    </View>
+  );
+
+  const stage = (
+    <View style={styles.stage}>
+      <Visualizer
+        ref={visualizerRef}
+        comparison={comparison}
+        height={visualizerHeight}
+        theme={theme}
+        viewMode={state.viewMode}
+      />
+      {pianoDeck}
     </View>
   );
 
   const controls = (
     <View style={styles.controlStack}>
       <View style={sectionStyle}>
-        <Text style={sectionTitleStyle}>Configuration</Text>
-        <SegmentedControl options={THEME_MODE_OPTIONS} value={preferences.themeMode} onChange={setThemeMode} theme={theme} />
-        <SegmentedControl
-          options={ORIENTATION_MODE_OPTIONS}
-          value={preferences.orientationMode}
-          onChange={setOrientationMode}
-          theme={theme}
-        />
-        <Text style={statusTextStyle}>{configurationStatus}</Text>
-      </View>
-
-      <View style={sectionStyle}>
         <Text style={sectionTitleStyle}>Visual comparison</Text>
         <SegmentedControl options={VIEW_MODES} value={state.viewMode} onChange={setViewMode} theme={theme} />
-      </View>
-
-      <View style={sectionStyle}>
-        <NoteSelector
-          label="X root"
-          value={state.xNote}
-          accentColor={theme.equalAccent}
-          onChange={(note: NoteName) => updateState("xNote", note)}
-          theme={theme}
-        />
-        <NoteSelector
-          label="Y target"
-          value={state.yNote}
-          accentColor={theme.justAccent}
-          onChange={(note: NoteName) => updateState("yNote", note)}
-          theme={theme}
-        />
       </View>
 
       <View style={sectionStyle}>
@@ -313,25 +317,37 @@ export default function App() {
         </Pressable>
         <Text style={statusTextStyle}>{exportStatus}</Text>
       </View>
+
+      <View style={sectionStyle}>
+        <Text style={sectionTitleStyle}>Configuration</Text>
+        <SegmentedControl options={THEME_MODE_OPTIONS} value={preferences.themeMode} onChange={setThemeMode} theme={theme} />
+        <SegmentedControl
+          options={ORIENTATION_MODE_OPTIONS}
+          value={preferences.orientationMode}
+          onChange={setOrientationMode}
+          theme={theme}
+        />
+        <Text style={statusTextStyle}>{configurationStatus}</Text>
+      </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        {
+          backgroundColor: theme.background,
+          paddingTop: Platform.OS === "android" ? NativeStatusBar.currentHeight ?? 0 : 0,
+        },
+      ]}
+    >
       <StatusBar style={theme.statusBarStyle} />
       {useLandscapeLayout ? (
         <View style={styles.landscapePage}>
           {header}
           <View style={styles.landscapeBody}>
-            <View style={styles.visualizerColumn}>
-              <Visualizer
-                ref={visualizerRef}
-                comparison={comparison}
-                height={visualizerHeight}
-                theme={theme}
-                viewMode={state.viewMode}
-              />
-            </View>
+            <View style={styles.visualizerColumn}>{stage}</View>
             <ScrollView
               style={styles.landscapeControls}
               contentContainerStyle={styles.landscapeControlsContent}
@@ -342,17 +358,19 @@ export default function App() {
           </View>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
-          {header}
-          <Visualizer
-            ref={visualizerRef}
-            comparison={comparison}
-            height={visualizerHeight}
-            theme={theme}
-            viewMode={state.viewMode}
-          />
-          {controls}
-        </ScrollView>
+        <View style={styles.portraitPage}>
+          <View style={styles.fixedTop}>
+            {header}
+            {stage}
+          </View>
+          <ScrollView
+            style={styles.portraitControls}
+            contentContainerStyle={styles.portraitControlsContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {controls}
+          </ScrollView>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -362,15 +380,31 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  content: {
-    gap: 12,
-    padding: 12,
-    paddingBottom: 34,
+  portraitPage: {
+    flex: 1,
+    minHeight: 0,
+  },
+  fixedTop: {
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingTop: 6,
+    paddingBottom: 8,
+  },
+  portraitControls: {
+    flex: 1,
+    minHeight: 0,
+  },
+  portraitControlsContent: {
+    paddingHorizontal: 10,
+    paddingTop: 6,
+    paddingBottom: 30,
   },
   landscapePage: {
     flex: 1,
-    gap: 10,
-    padding: 14,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 12,
   },
   landscapeBody: {
     flex: 1,
@@ -392,22 +426,32 @@ const styles = StyleSheet.create({
   controlStack: {
     gap: 10,
   },
-  header: {
-    gap: 2,
+  stage: {
+    gap: 8,
   },
-  eyebrow: {
-    fontSize: 11,
-    fontWeight: "900",
+  pianoDeck: {
+    gap: 6,
+  },
+  header: {
+    minHeight: 28,
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: 10,
+    borderBottomWidth: 1,
+    paddingBottom: 5,
   },
   title: {
-    fontSize: 25,
+    flexShrink: 1,
+    fontSize: 18,
     fontWeight: "900",
     letterSpacing: 0,
   },
   subtitle: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 11,
+    lineHeight: 15,
     fontWeight: "700",
+    textTransform: "uppercase",
   },
   section: {
     gap: 10,
