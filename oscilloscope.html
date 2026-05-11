@@ -1,0 +1,2394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Waveform Visualizer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel: #11181a;
+      --panel-2: #0b1011;
+      --line: #2d4242;
+      --text: #d8eee8;
+      --muted: #85a19a;
+      --accent: #62ff9f;
+      --amber: #ffc766;
+      --control: #172326;
+      --control-height: 30px;
+      --touch-control-height: 46px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #050808;
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      letter-spacing: 0;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: rgba(98, 255, 159, 0.16);
+    }
+
+    body {
+      display: grid;
+      grid-template-columns: minmax(360px, 62vw) minmax(340px, 1fr);
+      height: 100dvh;
+    }
+
+    body.presentation {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    #scopeStage {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(56, 255, 145, 0.08), transparent 42%),
+        linear-gradient(145deg, #081011 0%, #020404 100%);
+      overflow: hidden;
+    }
+
+    #scope {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+      user-select: none;
+    }
+
+    body.presentation aside {
+      display: none;
+    }
+
+    .scope-label {
+      position: absolute;
+      left: 18px;
+      top: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: rgba(213, 255, 230, 0.72);
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: none;
+      text-transform: uppercase;
+    }
+
+    .pilot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(98, 255, 159, 0.95);
+    }
+
+    .readout {
+      position: absolute;
+      left: 18px;
+      bottom: 14px;
+      display: grid;
+      gap: 4px;
+      min-width: 210px;
+      color: rgba(213, 255, 230, 0.68);
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      pointer-events: none;
+    }
+
+    .presentationControls {
+      position: absolute;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      z-index: 5;
+      display: none;
+      width: min(760px, calc(100% - 32px));
+      transform: translateX(-50%);
+      grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid rgba(139, 255, 195, 0.2);
+      border-radius: 8px;
+      background: rgba(7, 14, 15, 0.82);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(14px);
+    }
+
+    body.presentation .presentationControls {
+      display: grid;
+    }
+
+    .presentationControls button {
+      min-height: 30px;
+      white-space: nowrap;
+    }
+
+    .presentationGroup {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .miniControl {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+      margin: 0;
+      color: rgba(216, 238, 232, 0.82);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .miniControl .row {
+      gap: 8px;
+    }
+
+    .miniControl output {
+      min-width: 52px;
+      font-size: 10px;
+    }
+
+    .miniControl input[type="range"] {
+      height: 20px;
+    }
+
+    .miniControl input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px;
+    }
+
+    .miniControl input[type="range"]::-webkit-slider-thumb {
+      width: 16px;
+      height: 16px;
+      margin-top: -7px;
+    }
+
+    .miniControl input[type="range"]::-moz-range-track {
+      height: 4px;
+    }
+
+    .miniControl input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+    }
+
+    aside {
+      min-width: 0;
+      height: 100vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      border-left: 1px solid rgba(111, 255, 178, 0.15);
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      box-shadow: -18px 0 48px rgba(0, 0, 0, 0.42);
+      padding: 14px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-weight: 650;
+    }
+
+    .subhead {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .section {
+      border-top: 1px solid rgba(143, 255, 198, 0.13);
+      padding: 12px 0;
+    }
+
+    .section:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    h2 {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin: 0 0 8px;
+      color: #f3fff8;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    h2 span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .controlDropdown summary {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin: 0;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .controlDropdown summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .summaryHeading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      color: #f3fff8;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .summaryHeading span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .summaryIcon {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(139, 255, 195, 0.24);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .summaryIcon::before {
+      content: "+";
+    }
+
+    .controlDropdown[open] .summaryIcon::before {
+      content: "-";
+    }
+
+    .choiceGrid {
+      align-items: end;
+    }
+
+    .displayControls {
+      padding-top: 8px;
+    }
+
+    .modeBar {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+
+    body.presentation #presentationToggle {
+      display: none;
+    }
+
+    #presentationToggle {
+      min-height: 34px;
+      border-color: rgba(98, 255, 159, 0.36);
+      background: rgba(98, 255, 159, 0.1);
+      color: #effff5;
+    }
+
+    .helpAnchor,
+    .labelTitle {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .tipWrap {
+      position: relative;
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+    }
+
+    .helpButton {
+      display: inline-grid;
+      place-items: center;
+      width: 12px;
+      height: 12px;
+      min-height: 12px;
+      padding: 0;
+      border-color: rgba(139, 255, 195, 0.24);
+      border-radius: 50%;
+      background: rgba(98, 255, 159, 0.045);
+      color: rgba(98, 255, 159, 0.82);
+      font-size: 8px;
+      font-weight: 800;
+      line-height: 1;
+      text-transform: none;
+    }
+
+    .helpButton:hover,
+    .helpButton:focus-visible,
+    .tipWrap[data-open="true"] .helpButton {
+      border-color: rgba(98, 255, 159, 0.78);
+      background: rgba(98, 255, 159, 0.18);
+      color: white;
+      outline: none;
+    }
+
+    .tipBubble {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 30;
+      display: none;
+      width: min(278px, calc(100vw - 34px));
+      padding: 10px 11px;
+      border: 1px solid rgba(139, 255, 195, 0.28);
+      border-radius: 6px;
+      background: #071011;
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.46);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.35;
+      text-transform: none;
+    }
+
+    .tipWrap[data-open="true"] .tipBubble {
+      display: block;
+    }
+
+    .tipBubble strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #f3fff8;
+      font-size: 12px;
+    }
+
+    label,
+    .controlLabel {
+      display: grid;
+      gap: 4px;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    output {
+      min-width: 66px;
+      color: #e8fff3;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    input,
+    select,
+    button {
+      font: inherit;
+    }
+
+    input[type="number"],
+    input[type="color"],
+    select,
+    button {
+      width: 100%;
+      border: 1px solid rgba(139, 255, 195, 0.16);
+      border-radius: 6px;
+      background: linear-gradient(180deg, rgba(28, 43, 46, 0.96), rgba(18, 29, 32, 0.96));
+      color: var(--text);
+      min-height: var(--control-height);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+    }
+
+    input[type="number"] {
+      padding: 0 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    select {
+      padding: 0 24px 0 9px;
+      color: #ecfff6;
+    }
+
+    input[type="color"] {
+      padding: 4px 6px;
+      cursor: pointer;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      touch-action: manipulation;
+    }
+
+    button:not(.helpButton) {
+      padding: 0 12px;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid rgba(98, 255, 159, 0.72);
+      outline-offset: 2px;
+    }
+
+    @media (hover: hover) {
+      button:hover {
+        border-color: rgba(98, 255, 159, 0.52);
+        color: white;
+      }
+    }
+
+    input[type="range"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      height: 26px;
+      border: 0;
+      background: transparent;
+      accent-color: var(--accent);
+      touch-action: pan-y;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      border: 1px solid rgba(139, 255, 195, 0.16);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.34);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      margin-top: -8px;
+      border: 2px solid rgba(7, 16, 17, 0.96);
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 1px rgba(98, 255, 159, 0.52), 0 0 18px rgba(98, 255, 159, 0.24);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 6px;
+      border: 1px solid rgba(139, 255, 195, 0.16);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.34);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(7, 16, 17, 0.96);
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .buttonGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .buttonGrid.singleAction {
+      grid-template-columns: 1fr;
+    }
+
+    .compactGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin: 6px 0;
+    }
+
+    .compactGrid label {
+      margin: 0;
+    }
+
+    .compactGrid .controlLabel {
+      margin: 0;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid rgba(139, 255, 195, 0.14);
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .segmented button {
+      min-height: 28px;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .segmented button[aria-pressed="true"] {
+      background: linear-gradient(180deg, rgba(41, 62, 65, 0.96), rgba(23, 35, 38, 0.96));
+      color: var(--text);
+      border-color: rgba(98, 255, 159, 0.34);
+    }
+
+    .phaseModPanel {
+      display: grid;
+      grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
+      gap: 10px;
+      align-items: end;
+      margin: 8px 0 6px;
+      padding: 7px 8px;
+      border: 1px solid rgba(139, 255, 195, 0.13);
+      border-radius: 6px;
+      background: linear-gradient(180deg, rgba(98, 255, 159, 0.055), rgba(0, 0, 0, 0.13));
+    }
+
+    .switchControl {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      min-height: 30px;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .switchInline {
+      display: inline-grid;
+      grid-template-columns: auto auto;
+      gap: 7px;
+      align-items: center;
+      color: #e8fff3;
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .switchControl input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .switchTrack {
+      position: relative;
+      display: inline-block;
+      width: 32px;
+      height: 18px;
+      border: 1px solid rgba(139, 255, 195, 0.26);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.32);
+      transition: border-color 160ms ease, background 160ms ease;
+    }
+
+    .switchThumb {
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .switchControl input:checked + .switchTrack {
+      border-color: rgba(98, 255, 159, 0.76);
+      background: rgba(98, 255, 159, 0.18);
+    }
+
+    .switchControl input:checked + .switchTrack .switchThumb {
+      transform: translateX(14px);
+      background: var(--accent);
+      box-shadow: 0 0 12px rgba(98, 255, 159, 0.72);
+    }
+
+    .switchControl:focus-within .switchTrack {
+      outline: 2px solid rgba(98, 255, 159, 0.72);
+      outline-offset: 2px;
+    }
+
+    .phaseModRate {
+      margin: 0;
+    }
+
+    .phaseModRate input[type="range"] {
+      height: 18px;
+    }
+
+    .phaseModPanel[data-enabled="false"] .phaseModRate {
+      opacity: 0.56;
+    }
+
+    .phaseModPanel[data-enabled="false"] .phaseModRate input {
+      cursor: not-allowed;
+    }
+
+    .freqNumber {
+      margin-top: 2px;
+    }
+
+    .statGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat {
+      padding: 7px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.22);
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 2px;
+      color: #f0fff6;
+      font-size: 17px;
+    }
+
+    .statusLine {
+      min-height: 18px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 860px) {
+      html {
+        height: auto;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      body {
+        display: block;
+        height: auto;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: visible;
+      }
+
+      body.presentation {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr);
+        height: 100dvh;
+        min-height: 100dvh;
+        overflow: hidden;
+      }
+
+      #scopeStage {
+        position: relative;
+        z-index: 2;
+        height: clamp(300px, 48dvh, 520px);
+        min-height: 300px;
+        border-bottom: 1px solid rgba(111, 255, 178, 0.15);
+      }
+
+      body.presentation #scopeStage {
+        height: 100dvh;
+        min-height: 100dvh;
+        border-bottom: 0;
+      }
+
+      .presentationControls {
+        width: min(460px, calc(100% - 24px));
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 9px;
+      }
+
+      .presentationControls button {
+        min-height: 36px;
+      }
+
+      aside {
+        position: relative;
+        z-index: 3;
+        height: auto;
+        overflow: visible;
+        border-left: 0;
+        border-top: 0;
+        box-shadow: 0 -16px 42px rgba(0, 0, 0, 0.38);
+        padding: 18px max(16px, env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      }
+
+      h1 {
+        font-size: 19px;
+      }
+
+      .subhead {
+        margin-bottom: 14px;
+      }
+
+      .section {
+        padding: 14px 0;
+      }
+
+      label,
+      .controlLabel {
+        margin: 14px 0;
+        font-size: 13px;
+      }
+
+      input[type="number"],
+      input[type="color"],
+      select,
+      button {
+        min-height: var(--touch-control-height);
+        font-size: 16px;
+      }
+
+      .segmented button {
+        min-height: 38px;
+        font-size: 13px;
+      }
+
+      .phaseModPanel {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 10px;
+      }
+
+      .switchControl {
+        min-height: 44px;
+      }
+
+      .switchInline {
+        font-size: 13px;
+      }
+
+      .switchTrack {
+        width: 46px;
+        height: 26px;
+      }
+
+      .switchThumb {
+        width: 18px;
+        height: 18px;
+      }
+
+      .switchControl input:checked + .switchTrack .switchThumb {
+        transform: translateX(20px);
+      }
+
+      .helpButton {
+        width: 16px;
+        height: 16px;
+        min-height: 16px;
+        font-size: 9px;
+      }
+
+      .tipBubble {
+        width: min(320px, calc(100vw - 28px));
+        font-size: 13px;
+      }
+
+      .readout {
+        right: 14px;
+        bottom: 12px;
+        min-width: 0;
+        font-size: 11px;
+      }
+
+      body.presentation .readout {
+        bottom: calc(178px + env(safe-area-inset-bottom));
+      }
+    }
+
+    @media (max-width: 520px) {
+      #scopeStage {
+        height: clamp(280px, 44dvh, 440px);
+        min-height: 280px;
+      }
+
+      .scope-label {
+        left: 14px;
+        top: 12px;
+        gap: 8px;
+        font-size: 11px;
+      }
+
+      .compactGrid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .statGrid,
+      .buttonGrid {
+        grid-template-columns: 1fr;
+      }
+
+      .presentationGroup {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      body.presentation .readout {
+        bottom: calc(318px + env(safe-area-inset-bottom));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="scopeStage" aria-label="XY oscilloscope display">
+    <canvas id="scope"></canvas>
+    <div class="scope-label"><span class="pilot"></span><span>XY analog mode</span></div>
+    <div class="readout">
+      <div id="traceReadout">X 110.00 Hz  /  Y 165.00 Hz</div>
+      <div id="perfReadout">0 fps  /  0 samples</div>
+    </div>
+    <div class="presentationControls" aria-label="Presentation controls">
+      <button id="presentationExit" type="button">Exit</button>
+      <div class="presentationGroup" data-presentation-osc="x">
+        <label class="miniControl">
+          <span class="row"><span>X freq</span><output data-presentation-out="freq"></output></span>
+          <input type="range" min="0.1" max="520" step="0.01" value="110" data-presentation-param="freq" aria-label="Presentation oscillator X frequency">
+        </label>
+        <label class="miniControl">
+          <span class="row"><span>X amp</span><output data-presentation-out="amp"></output></span>
+          <input type="range" min="0" max="1" step="0.001" value="0.74" data-presentation-param="amp" aria-label="Presentation oscillator X amplitude">
+        </label>
+      </div>
+      <div class="presentationGroup" data-presentation-osc="y">
+        <label class="miniControl">
+          <span class="row"><span>Y freq</span><output data-presentation-out="freq"></output></span>
+          <input type="range" min="0.1" max="520" step="0.01" value="165" data-presentation-param="freq" aria-label="Presentation oscillator Y frequency">
+        </label>
+        <label class="miniControl">
+          <span class="row"><span>Y amp</span><output data-presentation-out="amp"></output></span>
+          <input type="range" min="0" max="1" step="0.001" value="0.74" data-presentation-param="amp" aria-label="Presentation oscillator Y amplitude">
+        </label>
+      </div>
+      <button id="presentationFreeze" type="button">Freeze</button>
+    </div>
+  </main>
+
+  <aside>
+    <h1>Waveform Visualizer</h1>
+    <p class="subhead">Two oscillators drive X and Y directly. Rendering uses WebGL2 persistence buffers and shader-generated phosphor traces.</p>
+    <div class="modeBar">
+      <button id="presentationToggle" type="button">Presentation mode</button>
+    </div>
+
+    <section class="section">
+      <h2>Tuning <span>note / interval</span></h2>
+      <div class="compactGrid">
+        <label data-help-key="frequencyMode">Mode
+          <select id="frequencyMode">
+            <option value="hz">Hz</option>
+            <option value="note">Note</option>
+            <option value="interval">Interval</option>
+          </select>
+        </label>
+        <label data-help-key="globalInterval">Interval
+          <select id="globalInterval"></select>
+        </label>
+        <div class="controlLabel" data-help-key="temperament">Temperament
+          <div class="segmented" id="temperament" role="group" aria-label="Temperament">
+            <button type="button" data-temperament="equal" aria-pressed="true">Equal</button>
+            <button type="button" data-temperament="just" aria-pressed="false">Just</button>
+          </div>
+        </div>
+        <label data-help-key="referenceFreq">Reference
+          <input id="referenceFreq" type="number" inputmode="decimal" enterkeyhint="done" min="0.1" max="520" step="0.01" value="110">
+        </label>
+      </div>
+    </section>
+
+    <section class="section" data-osc="x">
+      <h2>Oscillator X <span>horizontal</span></h2>
+      <div class="compactGrid choiceGrid">
+        <label data-help-key="waveX">Waveform
+          <select data-param="wave">
+            <option value="0">Sine</option>
+            <option value="1">Triangle</option>
+            <option value="2">Soft square</option>
+            <option value="3">Saw</option>
+          </select>
+        </label>
+        <label data-help-key="noteX">Note
+          <select data-param="note"></select>
+        </label>
+      </div>
+      <label data-help-key="freqX">
+        <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
+        <input class="freqNumber" type="number" inputmode="decimal" enterkeyhint="done" min="0.1" max="520" step="0.01" value="110" data-param="freqNumber" aria-label="Oscillator X frequency in Hz">
+        <input type="range" min="0.1" max="520" step="0.01" value="110" data-param="freq">
+      </label>
+      <label data-help-key="ampX">
+        <span class="row"><span>Amplitude</span><output data-out="amp"></output></span>
+        <input type="range" min="0" max="1" step="0.001" value="0.74" data-param="amp">
+      </label>
+      <label data-help-key="phaseX">
+        <span class="row"><span>Phase</span><output data-out="phase"></output></span>
+        <input type="range" min="-180" max="180" step="0.1" value="0" data-param="phase">
+      </label>
+      <label data-help-key="offsetX">
+        <span class="row"><span>Offset</span><output data-out="offset"></output></span>
+        <input type="range" min="-0.9" max="0.9" step="0.001" value="0" data-param="offset">
+      </label>
+    </section>
+
+    <section class="section" data-osc="y">
+      <h2>Oscillator Y <span>vertical</span></h2>
+      <div class="compactGrid choiceGrid">
+        <label data-help-key="waveY">Waveform
+          <select data-param="wave">
+            <option value="0">Sine</option>
+            <option value="1">Triangle</option>
+            <option value="2">Soft square</option>
+            <option value="3">Saw</option>
+          </select>
+        </label>
+        <label data-help-key="noteY">Note
+          <select data-param="note"></select>
+        </label>
+      </div>
+      <label data-help-key="freqY">
+        <span class="row"><span>Frequency</span><output data-out="freq"></output></span>
+        <input class="freqNumber" type="number" inputmode="decimal" enterkeyhint="done" min="0.1" max="520" step="0.01" value="165" data-param="freqNumber" aria-label="Oscillator Y frequency in Hz">
+        <input type="range" min="0.1" max="520" step="0.01" value="165" data-param="freq">
+      </label>
+      <label data-help-key="ampY">
+        <span class="row"><span>Amplitude</span><output data-out="amp"></output></span>
+        <input type="range" min="0" max="1" step="0.001" value="0.74" data-param="amp">
+      </label>
+      <label data-help-key="phaseY">
+        <span class="row"><span>Phase</span><output data-out="phase"></output></span>
+        <input type="range" min="-180" max="180" step="0.1" value="90" data-param="phase">
+      </label>
+      <div class="phaseModPanel" data-enabled="false">
+        <label class="switchControl" data-help-key="phaseMod">Phase Modulation
+          <span class="switchInline">
+            <span id="phaseModState">Off</span>
+            <input id="phaseModEnabled" type="checkbox" aria-label="Enable phase modulation">
+            <span class="switchTrack" aria-hidden="true"><span class="switchThumb"></span></span>
+          </span>
+        </label>
+        <label class="miniControl phaseModRate" data-help-key="phaseModRate">
+          <span class="row"><span>Mod rate</span><output id="phaseModRateOut"></output></span>
+          <input id="phaseModRate" type="range" min="0.001" max="0.1" step="0.001" value="0.010" aria-label="Phase modulation frequency in Hertz">
+        </label>
+      </div>
+      <label data-help-key="offsetY">
+        <span class="row"><span>Offset</span><output data-out="offset"></output></span>
+        <input type="range" min="-0.9" max="0.9" step="0.001" value="0" data-param="offset">
+      </label>
+    </section>
+
+    <details class="section controlDropdown" id="displayOptions">
+      <summary>
+        <span class="summaryHeading">Display <span>phosphor</span></span>
+        <span class="summaryIcon" aria-hidden="true"></span>
+      </summary>
+      <div class="displayControls">
+        <label data-help-key="persistence">
+          <span class="row"><span>Persistence</span><output data-out="persistence"></output></span>
+          <input id="persistence" type="range" min="0.86" max="0.997" step="0.001" value="0.972">
+        </label>
+        <label data-help-key="intensity">
+          <span class="row"><span>Trace intensity</span><output data-out="intensity"></output></span>
+          <input id="intensity" type="range" min="0.04" max="0.9" step="0.001" value="0.32">
+        </label>
+        <label data-help-key="focus">
+          <span class="row"><span>Focus</span><output data-out="focus"></output></span>
+          <input id="focus" type="range" min="1.2" max="5" step="0.1" value="2.4">
+        </label>
+        <label data-help-key="traceAntialias">
+          <span class="row"><span>Trace antialias</span><output data-out="traceAntialias"></output></span>
+          <input id="traceAntialias" type="range" min="0" max="1" step="0.01" value="0.54">
+        </label>
+        <div class="compactGrid">
+          <label data-help-key="traceStyle">Trace style
+            <select id="traceStyle">
+              <option value="hybrid">Hybrid</option>
+              <option value="points">Points</option>
+              <option value="lines">Connected</option>
+            </select>
+          </label>
+          <label data-help-key="phosphorColor">Phosphor color
+            <input id="phosphorColor" type="color" value="#5cff9f" aria-label="Phosphor color">
+          </label>
+        </div>
+        <label data-help-key="decay">
+          <span class="row"><span>Decay</span><output data-out="decay"></output></span>
+          <input id="decay" type="range" min="0.82" max="1" step="0.001" value="0.960">
+        </label>
+        <label data-help-key="bloom">
+          <span class="row"><span>Bloom</span><output data-out="bloom"></output></span>
+          <input id="bloom" type="range" min="0" max="2.2" step="0.01" value="0.82">
+        </label>
+        <label data-help-key="traceWindow">
+          <span class="row"><span>Trace window</span><output data-out="window"></output></span>
+          <input id="window" type="range" min="0.002" max="0.08" step="0.001" value="0.032">
+        </label>
+        <label data-help-key="samples">
+          <span class="row"><span>Samples/frame</span><output data-out="samples"></output></span>
+          <input id="samples" type="range" min="512" max="16384" step="512" value="8192">
+        </label>
+        <div class="buttonGrid singleAction">
+          <button id="toggleFreeze" type="button">Freeze</button>
+        </div>
+      </div>
+    </details>
+
+    <section class="section">
+      <h2>Renderer <span>live</span></h2>
+      <div class="statGrid">
+        <div class="stat">Frame rate<strong id="fps">0</strong></div>
+        <div class="stat">GPU samples<strong id="sampleStat">0</strong></div>
+      </div>
+      <label data-help-key="exportScale">
+        <span class="row"><span>Export scale</span><output data-out="exportScale"></output></span>
+        <input id="exportScale" type="range" min="1" max="3" step="0.5" value="2">
+      </label>
+      <label data-help-key="exportSamples">
+        <span class="row"><span>Export samples</span><output data-out="exportSamples"></output></span>
+        <input id="exportSamples" type="range" min="16384" max="65536" step="4096" value="32768">
+      </label>
+      <button id="savePng" type="button">Save PNG</button>
+      <div class="statusLine" id="exportStatus" aria-live="polite"></div>
+    </section>
+  </aside>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const TAU = Math.PI * 2;
+      const FREQ_MIN = 0.1;
+      const FREQ_MAX = 520;
+      const canvas = document.getElementById("scope");
+      const compactRenderQuery = window.matchMedia("(pointer: coarse), (max-width: 860px)");
+      const gl = canvas.getContext("webgl2", {
+        antialias: false,
+        alpha: false,
+        depth: false,
+        stencil: false,
+        powerPreference: "high-performance",
+        preserveDrawingBuffer: false
+      });
+
+      if (!gl) {
+        document.body.innerHTML = "<main style='padding:32px;font:16px Segoe UI,sans-serif;color:white;background:#060909;min-height:100vh'>WebGL2 is required for the oscilloscope renderer.</main>";
+        return;
+      }
+
+      const state = {
+        x: { wave: 0, freq: 110, amp: 0.74, phase: 0, offset: 0, note: "A2" },
+        y: { wave: 0, freq: 164.81377845643496, amp: 0.74, phase: 90, offset: 0, note: "E3" },
+        phaseMod: { enabled: false, rate: 0.01 },
+        tuning: { freqMode: "interval", interval: "perfectFifth", temperament: "equal", referenceFreq: 110 },
+        persistence: 0.672,
+        intensity: 0.32,
+        focus: 2.4,
+        traceAntialias: 0.54,
+        traceStyle: "hybrid",
+        phosphorColor: [0.36, 1.0, 0.62],
+        decay: 0.76,
+        bloom: 0.82,
+        window: 0.032,
+        samples: 8192,
+        exportScale: 2,
+        exportSamples: 32768,
+        frozen: false
+      };
+
+      const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+      const JUST_NOTE_RATIOS = [1, 16 / 15, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 45 / 32, 3 / 2, 8 / 5, 5 / 3, 9 / 5, 15 / 8];
+      const C4_EQUAL_FREQ = 440 * Math.pow(2, -9 / 12);
+      const PHASE_MOD_MIN = 0.001;
+      const PHASE_MOD_MAX = 0.1;
+      const INTERVALS = [
+        { value: "unison", label: "Unison", semitones: 0, just: 1 },
+        { value: "minorSecond", label: "Minor second", semitones: 1, just: 16 / 15 },
+        { value: "majorSecond", label: "Major second", semitones: 2, just: 9 / 8 },
+        { value: "minorThird", label: "Minor third", semitones: 3, just: 6 / 5 },
+        { value: "majorThird", label: "Major third", semitones: 4, just: 5 / 4 },
+        { value: "perfectFourth", label: "Perfect fourth", semitones: 5, just: 4 / 3 },
+        { value: "tritone", label: "Tritone", semitones: 6, just: 45 / 32 },
+        { value: "perfectFifth", label: "Perfect fifth", semitones: 7, just: 3 / 2 },
+        { value: "minorSixth", label: "Minor sixth", semitones: 8, just: 8 / 5 },
+        { value: "majorSixth", label: "Major sixth", semitones: 9, just: 5 / 3 },
+        { value: "minorSeventh", label: "Minor seventh", semitones: 10, just: 9 / 5 },
+        { value: "majorSeventh", label: "Major seventh", semitones: 11, just: 15 / 8 },
+        { value: "octave", label: "Octave", semitones: 12, just: 2 },
+        { value: "minorNinth", label: "Minor ninth", semitones: 13, just: 32 / 15 },
+        { value: "majorNinth", label: "Major ninth", semitones: 14, just: 9 / 4 },
+        { value: "minorTenth", label: "Minor tenth", semitones: 15, just: 12 / 5 },
+        { value: "majorTenth", label: "Major tenth", semitones: 16, just: 5 / 2 },
+        { value: "perfectEleventh", label: "Perfect eleventh", semitones: 17, just: 8 / 3 },
+        { value: "compoundTritone", label: "Tritone + octave", semitones: 18, just: 45 / 16 },
+        { value: "perfectTwelfth", label: "Perfect twelfth", semitones: 19, just: 3 },
+        { value: "minorThirteenth", label: "Minor thirteenth", semitones: 20, just: 16 / 5 },
+        { value: "majorThirteenth", label: "Major thirteenth", semitones: 21, just: 10 / 3 },
+        { value: "minorFourteenth", label: "Minor fourteenth", semitones: 22, just: 18 / 5 },
+        { value: "majorFourteenth", label: "Major fourteenth", semitones: 23, just: 15 / 4 },
+        { value: "twoOctaves", label: "Two octaves", semitones: 24, just: 4 }
+      ];
+      const INTERVAL_BY_VALUE = new Map(INTERVALS.map(interval => [interval.value, interval]));
+      const MIN_NOTE_MIDI = 12;
+      const MAX_NOTE_MIDI = 119;
+      const HELP_TEXT = {
+        frequencyMode: {
+          title: "Frequency mode",
+          text: "Hz lets each oscillator run at the exact number you type or slide to. Note snaps each oscillator to a musical note. Interval uses X as the base note and sets Y by the selected musical interval."
+        },
+        globalInterval: {
+          title: "Interval",
+          text: "Only active in Interval mode. It chooses the musical distance from oscillator X to oscillator Y, such as unison, perfect fifth, octave, or compound intervals."
+        },
+        temperament: {
+          title: "Temperament",
+          text: "Equal uses twelve-tone equal temperament, where every semitone has the same ratio. Just uses simple ratios for stronger harmonic locking in interval mode. Direct Hz mode is not quantized."
+        },
+        referenceFreq: {
+          title: "Reference",
+          text: "Stored tuning reference in Hz. The current note system mostly uses fixed A440/C4-derived calculations, so this is reserved for deeper retuning behavior and fallback frequency handling."
+        },
+        waveX: {
+          title: "X waveform",
+          text: "Chooses the signal shape that drives horizontal motion. Sine is smooth, triangle is linear and folded, soft square makes boxier corners, and saw creates angled ramps."
+        },
+        freqX: {
+          title: "X frequency",
+          text: "Sets the horizontal oscillator speed in Hz. Simple ratios against Y, such as 1:1, 2:3, 3:4, or 3:5, usually make more stable Lissajous figures."
+        },
+        noteX: {
+          title: "X note",
+          text: "Chooses oscillator X by musical note when Note or Interval mode is active. In Interval mode this note is the base pitch used to calculate Y."
+        },
+        ampX: {
+          title: "X amplitude",
+          text: "Controls horizontal size. At 0 the image collapses toward a vertical line; higher values spread the trace farther left and right."
+        },
+        phaseX: {
+          title: "X phase",
+          text: "Offsets horizontal timing from -180 to 180 degrees. Phase changes the relationship between axes, turning matching sine waves into lines, ellipses, circles, or rotated forms."
+        },
+        offsetX: {
+          title: "X offset",
+          text: "Moves the whole pattern left or right. Positive values shift right, negative values shift left, and large offsets can push the trace toward the scope edge."
+        },
+        waveY: {
+          title: "Y waveform",
+          text: "Chooses the signal shape that drives vertical motion. Matching X gives classic figures; mixing shapes produces folded grids, corners, and asymmetric motion."
+        },
+        freqY: {
+          title: "Y frequency",
+          text: "Sets the vertical oscillator speed in Hz. Its ratio against X controls whether the trace locks into a simple figure or drifts through a complex pattern."
+        },
+        noteY: {
+          title: "Y note",
+          text: "Chooses oscillator Y by musical note when Note mode is active. In Interval mode Y is calculated from X plus the selected interval, so this control reflects that relationship."
+        },
+        ampY: {
+          title: "Y amplitude",
+          text: "Controls vertical size. At 0 the image collapses toward a horizontal line; higher values stretch the trace up and down."
+        },
+        phaseY: {
+          title: "Y phase",
+          text: "Offsets vertical timing from -180 to 180 degrees. The default 90 degree Y phase opens the starting sine pattern into a rounder Lissajous figure."
+        },
+        phaseMod: {
+          title: "Phase modulation",
+          text: "Adds a slow cyclic offset to Y phase while leaving both phase sliders as the manual base values. Off keeps the oscilloscope exactly static."
+        },
+        phaseModRate: {
+          title: "Mod rate",
+          text: "Sets how many phase cycles happen per second when Phase Modulation is on. The full slider covers 0.001 to 0.1 Hz for slow, usable drift control."
+        },
+        offsetY: {
+          title: "Y offset",
+          text: "Moves the whole pattern up or down. Positive values shift up, negative values shift down, and large offsets can push parts of the trace off center."
+        },
+        persistence: {
+          title: "Persistence",
+          text: "Controls how slowly old trace data fades. Lower values clear quickly and emphasize the newest path; higher values create longer analog-style phosphor trails."
+        },
+        intensity: {
+          title: "Trace intensity",
+          text: "Controls how strongly new samples are added to the persistence buffer. Raise it for a brighter trace, lower it when the image saturates or loses detail."
+        },
+        focus: {
+          title: "Focus",
+          text: "Sets the point size used for trace samples. Lower values make a thinner line; higher values make the trace thicker and add more phosphor energy."
+        },
+        traceAntialias: {
+          title: "Trace antialias",
+          text: "Softens trace edges independently from Focus. Lower values are sharper and more pixel-like; higher values smooth points and lines for a cleaner phosphor edge."
+        },
+        traceStyle: {
+          title: "Trace style",
+          text: "Hybrid draws both connected lines and points. Points gives a dotted sample-based oscilloscope look. Connected emphasizes continuous curves."
+        },
+        phosphorColor: {
+          title: "Phosphor color",
+          text: "Changes the trace and grid tint. Green feels like a classic CRT, amber is warmer, and blue-white reads as a sharper electronic display."
+        },
+        decay: {
+          title: "Decay",
+          text: "Controls how long the persistence buffer remains after each frame. Lower values clear old samples faster; higher values keep longer phosphor trails."
+        },
+        bloom: {
+          title: "Bloom",
+          text: "Controls the separate blurred glow pass. Raise it for a wider luminous aura, or lower it when the trace needs to stay crisp."
+        },
+        traceWindow: {
+          title: "Trace window",
+          text: "Controls how much oscillator time is drawn each frame. Short windows show a tighter live segment; longer windows reveal more cycles and denser figures."
+        },
+        samples: {
+          title: "Samples per frame",
+          text: "Sets how many points the GPU draws each animation frame. Higher values are smoother but cost more GPU work; lower values improve performance but can look sparse."
+        },
+        exportScale: {
+          title: "Export scale",
+          text: "Sets the temporary resolution multiplier used only when saving a PNG. It does not change the live canvas, and the app caps export size to the GPU texture limit."
+        },
+        exportSamples: {
+          title: "Export samples",
+          text: "Sets the temporary sample count used only for saved PNGs. Higher values produce denser exported curves without changing live performance."
+        }
+      };
+
+      const vertFull = `#version 300 es
+        const vec2 POS[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
+        out vec2 vUv;
+        void main() {
+          vec2 p = POS[gl_VertexID];
+          vUv = p * 0.5 + 0.5;
+          gl_Position = vec4(p, 0.0, 1.0);
+        }`;
+
+      const fragFade = `#version 300 es
+        precision highp float;
+        uniform sampler2D uPrev;
+        uniform vec3 uDecay;
+        in vec2 vUv;
+        out vec4 outColor;
+        void main() {
+          vec3 old = clamp(texture(uPrev, vUv).rgb, vec3(0.0), vec3(4.0));
+          outColor = vec4(old * uDecay, 1.0);
+        }`;
+
+      const vertTrace = `#version 300 es
+        precision highp float;
+        uniform float uTime;
+        uniform float uTraceWindow;
+        uniform float uSampleCount;
+        uniform float uPointSize;
+        uniform vec4 uOscX;
+        uniform vec4 uOscY;
+        uniform int uWaveX;
+        uniform int uWaveY;
+        out float vAge;
+
+        float osc(float t, int wave) {
+          float s = sin(t);
+          if (wave == 0) {
+            return s;
+          }
+          if (wave == 1) {
+            return asin(s) * 0.63661977236;
+          }
+          if (wave == 2) {
+            return tanh(s * 5.8);
+          }
+          float p = fract(t * 0.15915494309);
+          return p * 2.0 - 1.0;
+        }
+
+        void main() {
+          float id = float(gl_VertexID);
+          float f = id / max(uSampleCount - 1.0, 1.0);
+          float localTime = uTime + f * uTraceWindow;
+          float xPhase = radians(uOscX.z);
+          float yPhase = radians(uOscY.z);
+          float x = osc(6.28318530718 * uOscX.x * localTime + xPhase, uWaveX) * uOscX.y + uOscX.w;
+          float y = osc(6.28318530718 * uOscY.x * localTime + yPhase, uWaveY) * uOscY.y + uOscY.w;
+          gl_Position = vec4(clamp(x, -1.08, 1.08), clamp(y, -1.08, 1.08), 0.0, 1.0);
+          gl_PointSize = uPointSize;
+          vAge = smoothstep(0.0, 1.0, f);
+        }`;
+
+      const fragTrace = `#version 300 es
+        precision highp float;
+        uniform float uIntensity;
+        uniform float uAntialias;
+        uniform vec3 uPhosphorColor;
+        in float vAge;
+        out vec4 outColor;
+        void main() {
+          vec2 p = gl_PointCoord * 2.0 - 1.0;
+          float d = dot(p, p);
+          float aa = clamp(uAntialias, 0.0, 1.0);
+          float edge = 1.0 - smoothstep(1.0 - aa * 0.28, 1.0, d);
+          float core = exp(-d * mix(9.0, 4.2, aa));
+          float halo = exp(-d * mix(2.4, 1.05, aa)) * mix(0.18, 0.42, aa);
+          float head = mix(0.62, 1.1, vAge);
+          vec3 phosphor = uPhosphorColor * (core + halo) * edge * uIntensity * head;
+          outColor = vec4(phosphor, (core + halo) * edge);
+        }`;
+
+      const fragTraceLine = `#version 300 es
+        precision highp float;
+        uniform float uIntensity;
+        uniform float uAntialias;
+        uniform vec3 uPhosphorColor;
+        in float vAge;
+        out vec4 outColor;
+        void main() {
+          float aa = clamp(uAntialias, 0.0, 1.0);
+          float head = mix(0.46, 0.95, vAge);
+          float body = mix(0.18, 0.42, aa);
+          vec3 phosphor = uPhosphorColor * uIntensity * head * body;
+          outColor = vec4(phosphor, body);
+        }`;
+
+      const fragPresent = `#version 300 es
+        precision highp float;
+        uniform sampler2D uTex;
+        uniform sampler2D uBloom;
+        uniform vec2 uResolution;
+        uniform vec3 uPhosphorColor;
+        uniform float uBloomStrength;
+        in vec2 vUv;
+        out vec4 outColor;
+
+        float lineGrid(float p, float scale, float width) {
+          float g = abs(fract(p * scale - 0.5) - 0.5) / fwidth(p * scale);
+          return 1.0 - smoothstep(width, width + 1.0, g);
+        }
+
+        void main() {
+          vec3 base = texture(uTex, vUv).rgb;
+          vec3 bloom = texture(uBloom, vUv).rgb;
+
+          vec2 scope = vUv * 2.0 - 1.0;
+          float roundMask = 1.0 - smoothstep(0.92, 1.24, length(scope * vec2(1.0, 0.92)));
+          float gridMinor = max(lineGrid(scope.x, 10.0, 0.42), lineGrid(scope.y, 10.0, 0.42));
+          float gridMajor = max(lineGrid(scope.x, 2.0, 0.78), lineGrid(scope.y, 2.0, 0.78));
+          float center = max(1.0 - smoothstep(0.0, 0.008, abs(scope.x)), 1.0 - smoothstep(0.0, 0.008, abs(scope.y)));
+          float vignette = 1.0 - smoothstep(0.22, 1.18, length(scope * vec2(1.0, 0.86)));
+          float scan = 0.94 + 0.06 * sin(gl_FragCoord.y * 2.35);
+
+          vec3 bg = vec3(0.006, 0.014, 0.012);
+          vec3 gridTint = mix(vec3(0.04, 0.36, 0.19), uPhosphorColor, 0.42);
+          vec3 grid = gridTint * gridMinor * 0.55 + gridTint * gridMajor * 1.05 + uPhosphorColor * center * 0.42;
+          vec3 phosphor = base * 1.48 + bloom * uBloomStrength;
+          vec3 color = bg + grid * roundMask * 0.45 + phosphor * roundMask;
+          color *= vignette * scan;
+          color += vec3(0.01, 0.035, 0.025) * (1.0 - roundMask);
+          outColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+        }`;
+
+      const fragBloom = `#version 300 es
+        precision highp float;
+        uniform sampler2D uSource;
+        uniform vec2 uResolution;
+        uniform vec2 uDirection;
+        uniform int uExtract;
+        in vec2 vUv;
+        out vec4 outColor;
+
+        vec3 sourceColor(vec2 uv) {
+          vec3 c = texture(uSource, uv).rgb;
+          if (uExtract == 1) {
+            float bright = max(max(c.r, c.g), c.b);
+            c = max(c - vec3(0.035), vec3(0.0)) * smoothstep(0.025, 0.22, bright);
+          }
+          return c;
+        }
+
+        void main() {
+          vec2 stepUv = uDirection / uResolution;
+          vec3 color = sourceColor(vUv) * 0.227027;
+          color += sourceColor(vUv + stepUv * 1.384615) * 0.316216;
+          color += sourceColor(vUv - stepUv * 1.384615) * 0.316216;
+          color += sourceColor(vUv + stepUv * 3.230769) * 0.070270;
+          color += sourceColor(vUv - stepUv * 3.230769) * 0.070270;
+          outColor = vec4(color, 1.0);
+        }`;
+
+      function compile(type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          throw new Error(gl.getShaderInfoLog(shader) || "Shader compilation failed");
+        }
+        return shader;
+      }
+
+      function program(vs, fs) {
+        const p = gl.createProgram();
+        gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
+        gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(p);
+        if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+          throw new Error(gl.getProgramInfoLog(p) || "Program link failed");
+        }
+        return p;
+      }
+
+      const fadeProgram = program(vertFull, fragFade);
+      const traceProgram = program(vertTrace, fragTrace);
+      const lineTraceProgram = program(vertTrace, fragTraceLine);
+      const bloomProgram = program(vertFull, fragBloom);
+      const presentProgram = program(vertFull, fragPresent);
+      const vao = gl.createVertexArray();
+      gl.bindVertexArray(vao);
+
+      const loc = {
+        fade: {
+          prev: gl.getUniformLocation(fadeProgram, "uPrev"),
+          decay: gl.getUniformLocation(fadeProgram, "uDecay")
+        },
+        trace: {
+          time: gl.getUniformLocation(traceProgram, "uTime"),
+          traceWindow: gl.getUniformLocation(traceProgram, "uTraceWindow"),
+          sampleCount: gl.getUniformLocation(traceProgram, "uSampleCount"),
+          pointSize: gl.getUniformLocation(traceProgram, "uPointSize"),
+          oscX: gl.getUniformLocation(traceProgram, "uOscX"),
+          oscY: gl.getUniformLocation(traceProgram, "uOscY"),
+          waveX: gl.getUniformLocation(traceProgram, "uWaveX"),
+          waveY: gl.getUniformLocation(traceProgram, "uWaveY"),
+          intensity: gl.getUniformLocation(traceProgram, "uIntensity"),
+          antialias: gl.getUniformLocation(traceProgram, "uAntialias"),
+          phosphorColor: gl.getUniformLocation(traceProgram, "uPhosphorColor")
+        },
+        line: {
+          time: gl.getUniformLocation(lineTraceProgram, "uTime"),
+          traceWindow: gl.getUniformLocation(lineTraceProgram, "uTraceWindow"),
+          sampleCount: gl.getUniformLocation(lineTraceProgram, "uSampleCount"),
+          pointSize: gl.getUniformLocation(lineTraceProgram, "uPointSize"),
+          oscX: gl.getUniformLocation(lineTraceProgram, "uOscX"),
+          oscY: gl.getUniformLocation(lineTraceProgram, "uOscY"),
+          waveX: gl.getUniformLocation(lineTraceProgram, "uWaveX"),
+          waveY: gl.getUniformLocation(lineTraceProgram, "uWaveY"),
+          intensity: gl.getUniformLocation(lineTraceProgram, "uIntensity"),
+          antialias: gl.getUniformLocation(lineTraceProgram, "uAntialias"),
+          phosphorColor: gl.getUniformLocation(lineTraceProgram, "uPhosphorColor")
+        },
+        bloom: {
+          source: gl.getUniformLocation(bloomProgram, "uSource"),
+          resolution: gl.getUniformLocation(bloomProgram, "uResolution"),
+          direction: gl.getUniformLocation(bloomProgram, "uDirection"),
+          extract: gl.getUniformLocation(bloomProgram, "uExtract")
+        },
+        present: {
+          tex: gl.getUniformLocation(presentProgram, "uTex"),
+          bloom: gl.getUniformLocation(presentProgram, "uBloom"),
+          resolution: gl.getUniformLocation(presentProgram, "uResolution"),
+          phosphorColor: gl.getUniformLocation(presentProgram, "uPhosphorColor"),
+          bloomStrength: gl.getUniformLocation(presentProgram, "uBloomStrength")
+        }
+      };
+
+      const buffers = [
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() },
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() }
+      ];
+      const bloomBuffers = [
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() },
+        { tex: gl.createTexture(), fb: gl.createFramebuffer() }
+      ];
+      const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) || 4096;
+      const exportMaxDimension = Math.min(4096, maxTextureSize);
+      let readIndex = 0;
+      let width = 0;
+      let height = 0;
+      let bloomWidth = 0;
+      let bloomHeight = 0;
+      let simTime = 0;
+      let lastNow = performance.now();
+      let fpsLast = lastNow;
+      let fpsFrames = 0;
+
+      function renderPixelRatio() {
+        return Math.min(window.devicePixelRatio || 1, compactRenderQuery.matches ? 1.5 : 2);
+      }
+
+      gl.disable(gl.DEPTH_TEST);
+      gl.disable(gl.CULL_FACE);
+
+      // Reinitialize a framebuffer-backed texture at a new size and attach it to the target FBO.
+      function configureTexture(target, targetWidth, targetHeight) {
+        gl.bindTexture(gl.TEXTURE_2D, target.tex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, targetWidth, targetHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.tex, 0);
+      }
+
+      // Clear each offscreen render target so resize/export paths start from a clean frame.
+      function clearTargets(targets) {
+        for (const target of targets) {
+          gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
+          gl.clearColor(0, 0, 0, 1);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+        }
+      }
+
+      // Keep the canvas, bloom buffers, and viewport aligned with the CSS pixel size and DPR.
+      function resize() {
+        const dpr = renderPixelRatio();
+        const nextWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+        const nextHeight = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+        if (nextWidth === width && nextHeight === height) {
+          return;
+        }
+        width = nextWidth;
+        height = nextHeight;
+        bloomWidth = Math.max(1, Math.floor(width * 0.5));
+        bloomHeight = Math.max(1, Math.floor(height * 0.5));
+        canvas.width = width;
+        canvas.height = height;
+        configureTexture(buffers[0], width, height);
+        configureTexture(buffers[1], width, height);
+        configureTexture(bloomBuffers[0], bloomWidth, bloomHeight);
+        configureTexture(bloomBuffers[1], bloomWidth, bloomHeight);
+        clearTargets(buffers);
+        clearTargets(bloomBuffers);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, width, height);
+      }
+
+      const oscControls = { x: null, y: null };
+      const presentationControls = { x: null, y: null };
+
+      // Wire up the inline help icons and keep their tooltips positioned and mutually exclusive.
+      function setupHelpTips() {
+        const tips = [];
+        // Close every open tip except the one explicitly left active.
+        const closeAll = except => {
+          for (const tip of tips) {
+            if (tip !== except) {
+              tip.wrap.dataset.open = "false";
+              tip.button.setAttribute("aria-expanded", "false");
+            }
+          }
+        };
+
+        // Place a tooltip bubble near its button while keeping it inside the viewport.
+        const positionBubble = (button, bubble) => {
+          const margin = 17;
+          const buttonRect = button.getBoundingClientRect();
+          const width = Math.min(278, Math.max(180, window.innerWidth - margin * 2));
+          bubble.style.width = `${width}px`;
+
+          const left = Math.min(
+            Math.max(margin, buttonRect.left + buttonRect.width * 0.5 - width * 0.5),
+            window.innerWidth - width - margin
+          );
+          const below = buttonRect.bottom + 8;
+          const bubbleHeight = bubble.offsetHeight;
+          const above = buttonRect.top - bubbleHeight - 8;
+          const top = below + bubbleHeight + margin <= window.innerHeight
+            ? below
+            : Math.max(margin, above);
+
+          bubble.style.left = `${left}px`;
+          bubble.style.top = `${top}px`;
+        };
+
+        // Find the text label that should host the help button for this control row.
+        const findHelpAnchor = control => {
+          const rowTitle = control.querySelector(".row > span:first-child");
+          if (rowTitle) {
+            return rowTitle;
+          }
+
+          for (const node of control.childNodes) {
+            if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+              const title = document.createElement("span");
+              title.className = "labelTitle";
+              title.textContent = node.textContent.trim();
+              control.replaceChild(title, node);
+              return title;
+            }
+          }
+
+          return null;
+        };
+
+        for (const control of document.querySelectorAll("[data-help-key]")) {
+          const help = HELP_TEXT[control.dataset.helpKey];
+          const anchor = help ? findHelpAnchor(control) : null;
+          if (!anchor) {
+            continue;
+          }
+
+          const id = `tip-${control.dataset.helpKey}`;
+          const wrap = document.createElement("span");
+          const button = document.createElement("button");
+          const bubble = document.createElement("span");
+          const title = document.createElement("strong");
+          const text = document.createElement("span");
+
+          // Replace the anchor label with a compact help affordance and the associated tooltip bubble.
+          anchor.classList.add("helpAnchor");
+          wrap.className = "tipWrap";
+          wrap.dataset.open = "false";
+          button.className = "helpButton";
+          button.type = "button";
+          button.textContent = "i";
+          button.setAttribute("aria-label", `Show help for ${help.title}`);
+          button.setAttribute("aria-expanded", "false");
+          button.setAttribute("aria-controls", id);
+          bubble.className = "tipBubble";
+          bubble.id = id;
+          bubble.setAttribute("role", "tooltip");
+          title.textContent = help.title;
+          text.textContent = help.text;
+          bubble.append(title, text);
+          wrap.append(button, bubble);
+          anchor.appendChild(wrap);
+
+          const tip = { wrap, button };
+          tips.push(tip);
+
+          // Toggle a single tooltip at a time and recompute its position when opened.
+          button.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const willOpen = wrap.dataset.open !== "true";
+            closeAll(tip);
+            wrap.dataset.open = String(willOpen);
+            button.setAttribute("aria-expanded", String(willOpen));
+            if (willOpen) {
+              positionBubble(button, bubble);
+            }
+          });
+        }
+
+        // Any outside interaction should dismiss help overlays so they do not linger on screen.
+        document.addEventListener("click", () => closeAll(null));
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape") {
+            closeAll(null);
+          }
+        });
+        window.addEventListener("resize", () => closeAll(null));
+        document.querySelector("aside").addEventListener("scroll", () => closeAll(null), { passive: true });
+      }
+
+      // Clamp frequency input to the configured range, or fall back to the previous valid value.
+      function clampFrequency(value, fallback) {
+        if (!Number.isFinite(value)) {
+          return fallback;
+        }
+        return Math.min(FREQ_MAX, Math.max(FREQ_MIN, value));
+      }
+
+      // Clamp phase-modulation rate input to the configured range, or fall back to the previous valid value.
+      function clampPhaseModRate(value, fallback) {
+        if (!Number.isFinite(value)) {
+          return fallback;
+        }
+        return Math.min(PHASE_MOD_MAX, Math.max(PHASE_MOD_MIN, value));
+      }
+
+      // Format control values for the readouts shown next to the sliders and numeric inputs.
+      function formatParam(param, value) {
+        if (param === "freq") return `${value.toFixed(2)} Hz`;
+        if (param === "phase") return `${value.toFixed(1)} deg`;
+        return value.toFixed(3);
+      }
+
+      function formatPhaseModRate(value) {
+        return `${value.toFixed(3)} Hz`;
+      }
+
+      function noteFrequency(note) {
+        const midi = noteToMidi(note);
+        if (midi < 0) {
+          return state.tuning.referenceFreq;
+        }
+        const noteIndex = midi % 12;
+        const octave = Math.floor(midi / 12) - 1;
+        if (state.tuning.temperament === "just") {
+          return C4_EQUAL_FREQ * Math.pow(2, octave - 4) * JUST_NOTE_RATIOS[noteIndex];
+        }
+        return 440 * Math.pow(2, (midi - 69) / 12);
+      }
+
+      function noteToMidi(note) {
+        const octave = Number(note.slice(-1));
+        const name = note.slice(0, -1);
+        const noteIndex = NOTE_NAMES.indexOf(name);
+        if (noteIndex < 0 || !Number.isFinite(octave)) {
+          return -1;
+        }
+        return (octave + 1) * 12 + noteIndex;
+      }
+
+      function intervalRatio(value) {
+        const interval = INTERVAL_BY_VALUE.get(value) || INTERVALS[0];
+        return state.tuning.temperament === "just" ? interval.just : Math.pow(2, interval.semitones / 12);
+      }
+
+      function midiToNote(midi) {
+        const clamped = Math.min(MAX_NOTE_MIDI, Math.max(MIN_NOTE_MIDI, midi));
+        return `${NOTE_NAMES[clamped % 12]}${Math.floor(clamped / 12) - 1}`;
+      }
+
+      function populateMusicSelects(section) {
+        const noteSelect = section.querySelector("[data-param='note']");
+        const noteOptions = document.createDocumentFragment();
+        for (let octave = 0; octave <= 8; octave++) {
+          for (const note of NOTE_NAMES) {
+            const option = document.createElement("option");
+            option.value = `${note}${octave}`;
+            option.textContent = `${note}${octave}`;
+            noteOptions.appendChild(option);
+          }
+        }
+        noteSelect.appendChild(noteOptions);
+      }
+
+      function populateGlobalInterval() {
+        const intervalSelect = document.getElementById("globalInterval");
+        const intervalOptions = document.createDocumentFragment();
+        for (const interval of INTERVALS) {
+          const option = document.createElement("option");
+          option.value = interval.value;
+          option.textContent = interval.label;
+          intervalOptions.appendChild(option);
+        }
+        intervalSelect.appendChild(intervalOptions);
+        intervalSelect.value = state.tuning.interval;
+      }
+
+      function syncFrequencyControls(osc) {
+        const controls = oscControls[osc];
+        if (!controls) {
+          return;
+        }
+        const value = state[osc].freq;
+        controls.freqRange.value = String(value);
+        controls.freqNumber.value = value.toFixed(2);
+        controls.freqOut.textContent = formatParam("freq", value);
+        syncPresentationControls(osc);
+      }
+
+      function syncAmplitudeControls(osc) {
+        const controls = oscControls[osc];
+        if (!controls) {
+          return;
+        }
+        const value = state[osc].amp;
+        controls.ampRange.value = String(value);
+        controls.ampOut.textContent = formatParam("amp", value);
+        syncPresentationControls(osc);
+      }
+
+      function syncPresentationControls(osc) {
+        const controls = presentationControls[osc];
+        if (!controls) {
+          return;
+        }
+        controls.freqRange.value = String(state[osc].freq);
+        controls.freqOut.textContent = formatParam("freq", state[osc].freq);
+        controls.ampRange.value = String(state[osc].amp);
+        controls.ampOut.textContent = formatParam("amp", state[osc].amp);
+      }
+
+      function syncModeControls(osc) {
+        const controls = oscControls[osc];
+        if (!controls) {
+          return;
+        }
+        const model = state[osc];
+        controls.note.value = model.note;
+        controls.note.disabled = state.tuning.freqMode === "hz";
+      }
+
+      function syncGlobalModeControls() {
+        const mode = document.getElementById("frequencyMode");
+        const interval = document.getElementById("globalInterval");
+        mode.value = state.tuning.freqMode;
+        interval.value = state.tuning.interval;
+        interval.disabled = state.tuning.freqMode !== "interval";
+        syncModeControls("x");
+        syncModeControls("y");
+      }
+
+      function setOscFrequency(osc, value) {
+        state[osc].freq = clampFrequency(value, state[osc].freq);
+        syncFrequencyControls(osc);
+      }
+
+      function applyNoteMode() {
+        setOscFrequency("x", noteFrequency(state.x.note));
+        setOscFrequency("y", noteFrequency(state.y.note));
+      }
+
+      function applyIntervalMode(anchor = "x") {
+        const interval = INTERVAL_BY_VALUE.get(state.tuning.interval) || INTERVALS[0];
+        if (anchor === "y") {
+          state.x.note = midiToNote(noteToMidi(state.y.note) - interval.semitones);
+        } else {
+          state.y.note = midiToNote(noteToMidi(state.x.note) + interval.semitones);
+        }
+        setOscFrequency("x", noteFrequency(state.x.note));
+        setOscFrequency("y", state.x.freq * intervalRatio(state.tuning.interval));
+        syncModeControls("x");
+        syncModeControls("y");
+      }
+
+      function applyGlobalFrequencyMode(anchor = "x") {
+        if (state.tuning.freqMode === "note") {
+          applyNoteMode();
+        } else if (state.tuning.freqMode === "interval") {
+          applyIntervalMode(anchor);
+        } else {
+          syncFrequencyControls("x");
+          syncFrequencyControls("y");
+        }
+      }
+
+      function bindNumberControl(input, out, getter, setter, format) {
+        const update = () => {
+          const value = Number(input.value);
+          setter(value);
+          out.textContent = format(value);
+        };
+        input.addEventListener("input", update, { passive: true });
+        update();
+      }
+
+      function syncPhaseModControls() {
+        const panel = document.querySelector(".phaseModPanel");
+        const enabled = document.getElementById("phaseModEnabled");
+        const stateText = document.getElementById("phaseModState");
+        const rate = document.getElementById("phaseModRate");
+        const rateOut = document.getElementById("phaseModRateOut");
+        enabled.checked = state.phaseMod.enabled;
+        stateText.textContent = state.phaseMod.enabled ? "On" : "Off";
+        rate.disabled = !state.phaseMod.enabled;
+        rate.value = String(state.phaseMod.rate);
+        rateOut.textContent = formatPhaseModRate(state.phaseMod.rate);
+        panel.dataset.enabled = String(state.phaseMod.enabled);
+      }
+
+      function wirePhaseMod() {
+        const control = document.querySelector(".switchControl");
+        const enabled = document.getElementById("phaseModEnabled");
+        const rate = document.getElementById("phaseModRate");
+        control.addEventListener("click", event => {
+          if (event.target === enabled || event.target.closest(".helpButton")) {
+            return;
+          }
+          event.preventDefault();
+          state.phaseMod.enabled = !state.phaseMod.enabled;
+          syncPhaseModControls();
+        });
+        enabled.addEventListener("change", () => {
+          state.phaseMod.enabled = enabled.checked;
+          syncPhaseModControls();
+        });
+        rate.addEventListener("input", () => {
+          state.phaseMod.rate = clampPhaseModRate(rate.valueAsNumber, state.phaseMod.rate);
+          syncPhaseModControls();
+        }, { passive: true });
+        syncPhaseModControls();
+      }
+
+      function hexToRgb(hex) {
+        const raw = hex.replace("#", "");
+        const value = Number.parseInt(raw.length === 3 ? raw.replace(/./g, c => c + c) : raw, 16);
+        if (!Number.isFinite(value)) {
+          return state.phosphorColor;
+        }
+        return [
+          ((value >> 16) & 255) / 255,
+          ((value >> 8) & 255) / 255,
+          (value & 255) / 255
+        ];
+      }
+
+      function rgbToHex(rgb) {
+        return `#${rgb.map(value => Math.round(Math.min(1, Math.max(0, value)) * 255).toString(16).padStart(2, "0")).join("")}`;
+      }
+
+      function wireOsc(section, osc) {
+        const model = state[osc];
+        const wave = section.querySelector("[data-param='wave']");
+        wave.value = String(model.wave);
+        wave.addEventListener("input", () => {
+          model.wave = Number(wave.value);
+        });
+
+        populateMusicSelects(section);
+        oscControls[osc] = {
+          freqRange: section.querySelector("[data-param='freq']"),
+          freqNumber: section.querySelector("[data-param='freqNumber']"),
+          freqOut: section.querySelector("[data-out='freq']"),
+          ampRange: section.querySelector("[data-param='amp']"),
+          ampOut: section.querySelector("[data-out='amp']"),
+          note: section.querySelector("[data-param='note']")
+        };
+
+        for (const param of ["freq", "amp", "phase", "offset"]) {
+          const input = section.querySelector(`[data-param='${param}']`);
+          const out = section.querySelector(`[data-out='${param}']`);
+          input.value = String(model[param]);
+          if (param === "freq") {
+            continue;
+          }
+          bindNumberControl(input, out, () => model[param], value => {
+            model[param] = value;
+            if (param === "amp") {
+              syncPresentationControls(osc);
+            }
+          }, value => {
+            return formatParam(param, value);
+          });
+        }
+
+        const controls = oscControls[osc];
+        controls.freqRange.value = String(model.freq);
+        controls.freqNumber.value = String(model.freq);
+        controls.freqRange.addEventListener("input", () => {
+          state.tuning.freqMode = "hz";
+          syncGlobalModeControls();
+          setOscFrequency(osc, controls.freqRange.valueAsNumber);
+        }, { passive: true });
+        controls.freqNumber.addEventListener("input", () => {
+          const value = controls.freqNumber.valueAsNumber;
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          state.tuning.freqMode = "hz";
+          syncGlobalModeControls();
+          setOscFrequency(osc, value);
+        });
+        controls.freqNumber.addEventListener("change", () => {
+          state.tuning.freqMode = "hz";
+          syncGlobalModeControls();
+          setOscFrequency(osc, controls.freqNumber.valueAsNumber);
+        });
+        controls.note.addEventListener("input", () => {
+          model.note = controls.note.value;
+          state.tuning.freqMode = "note";
+          syncGlobalModeControls();
+          applyNoteMode();
+        });
+        syncModeControls(osc);
+        syncFrequencyControls(osc);
+        syncAmplitudeControls(osc);
+      }
+
+      function setPresentationMode(enabled) {
+        document.body.classList.toggle("presentation", enabled);
+        document.getElementById("presentationToggle").setAttribute("aria-pressed", String(enabled));
+        resize();
+        requestAnimationFrame(resize);
+      }
+
+      function syncFreezeButtons() {
+        const label = state.frozen ? "Resume" : "Freeze";
+        document.getElementById("toggleFreeze").textContent = label;
+        document.getElementById("presentationFreeze").textContent = label;
+      }
+
+      function setFrozen(value) {
+        state.frozen = value;
+        syncFreezeButtons();
+      }
+
+      function wirePresentationControls() {
+        for (const section of document.querySelectorAll("[data-presentation-osc]")) {
+          const osc = section.dataset.presentationOsc;
+          presentationControls[osc] = {
+            freqRange: section.querySelector("[data-presentation-param='freq']"),
+            freqOut: section.querySelector("[data-presentation-out='freq']"),
+            ampRange: section.querySelector("[data-presentation-param='amp']"),
+            ampOut: section.querySelector("[data-presentation-out='amp']")
+          };
+          presentationControls[osc].freqRange.addEventListener("input", () => {
+            state.tuning.freqMode = "hz";
+            syncGlobalModeControls();
+            setOscFrequency(osc, presentationControls[osc].freqRange.valueAsNumber);
+          }, { passive: true });
+          presentationControls[osc].ampRange.addEventListener("input", () => {
+            state[osc].amp = Number(presentationControls[osc].ampRange.value);
+            syncAmplitudeControls(osc);
+          }, { passive: true });
+          syncPresentationControls(osc);
+        }
+
+        document.getElementById("presentationToggle").addEventListener("click", () => setPresentationMode(true));
+        document.getElementById("presentationExit").addEventListener("click", () => setPresentationMode(false));
+        document.getElementById("presentationFreeze").addEventListener("click", () => setFrozen(!state.frozen));
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape" && document.body.classList.contains("presentation")) {
+            setPresentationMode(false);
+          }
+        });
+      }
+
+      function wireDisplay() {
+        bindNumberControl(document.getElementById("persistence"), document.querySelector("[data-out='persistence']"), () => state.persistence, v => { state.persistence = v; }, v => v.toFixed(3));
+        bindNumberControl(document.getElementById("intensity"), document.querySelector("[data-out='intensity']"), () => state.intensity, v => { state.intensity = v; }, v => v.toFixed(3));
+        bindNumberControl(document.getElementById("focus"), document.querySelector("[data-out='focus']"), () => state.focus, v => { state.focus = v; }, v => `${v.toFixed(1)} px`);
+        bindNumberControl(document.getElementById("traceAntialias"), document.querySelector("[data-out='traceAntialias']"), () => state.traceAntialias, v => { state.traceAntialias = v; }, v => v.toFixed(2));
+        bindNumberControl(document.getElementById("decay"), document.querySelector("[data-out='decay']"), () => state.decay, v => { state.decay = v; }, v => v.toFixed(3));
+        bindNumberControl(document.getElementById("bloom"), document.querySelector("[data-out='bloom']"), () => state.bloom, v => { state.bloom = v; }, v => v.toFixed(2));
+        bindNumberControl(document.getElementById("window"), document.querySelector("[data-out='window']"), () => state.window, v => { state.window = v; }, v => `${(v * 1000).toFixed(1)} ms`);
+        bindNumberControl(document.getElementById("samples"), document.querySelector("[data-out='samples']"), () => state.samples, v => { state.samples = v | 0; }, v => String(v | 0));
+        bindNumberControl(document.getElementById("exportScale"), document.querySelector("[data-out='exportScale']"), () => state.exportScale, v => { state.exportScale = v; }, v => `${v.toFixed(1)}x`);
+        bindNumberControl(document.getElementById("exportSamples"), document.querySelector("[data-out='exportSamples']"), () => state.exportSamples, v => { state.exportSamples = v | 0; }, v => String(v | 0));
+        const traceStyle = document.getElementById("traceStyle");
+        traceStyle.value = state.traceStyle;
+        traceStyle.addEventListener("input", () => {
+          state.traceStyle = traceStyle.value;
+        });
+        const phosphorColor = document.getElementById("phosphorColor");
+        phosphorColor.value = rgbToHex(state.phosphorColor);
+        phosphorColor.addEventListener("input", () => {
+          state.phosphorColor = hexToRgb(phosphorColor.value);
+        });
+      }
+
+      function wireTuning() {
+        const mode = document.getElementById("frequencyMode");
+        const interval = document.getElementById("globalInterval");
+        const temperamentButtons = document.querySelectorAll("[data-temperament]");
+        const referenceFreq = document.getElementById("referenceFreq");
+        populateGlobalInterval();
+        mode.value = state.tuning.freqMode;
+        interval.value = state.tuning.interval;
+        referenceFreq.value = String(state.tuning.referenceFreq);
+        mode.addEventListener("input", () => {
+          state.tuning.freqMode = mode.value;
+          syncGlobalModeControls();
+          applyGlobalFrequencyMode();
+        });
+        interval.addEventListener("input", () => {
+          state.tuning.interval = interval.value;
+          syncGlobalModeControls();
+          if (state.tuning.freqMode === "interval") {
+            applyIntervalMode();
+          }
+        });
+        const syncTemperamentButtons = () => {
+          for (const button of temperamentButtons) {
+            button.setAttribute("aria-pressed", button.dataset.temperament === state.tuning.temperament ? "true" : "false");
+          }
+        };
+        for (const button of temperamentButtons) {
+          button.addEventListener("click", () => {
+            state.tuning.temperament = button.dataset.temperament;
+            state.tuning.freqMode = "interval";
+            syncTemperamentButtons();
+            syncGlobalModeControls();
+            applyGlobalFrequencyMode();
+          });
+        }
+        syncTemperamentButtons();
+        syncGlobalModeControls();
+        referenceFreq.addEventListener("input", () => {
+          const value = referenceFreq.valueAsNumber;
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          state.tuning.referenceFreq = clampFrequency(value, state.tuning.referenceFreq);
+          applyGlobalFrequencyMode();
+        });
+        referenceFreq.addEventListener("change", () => {
+          state.tuning.referenceFreq = clampFrequency(referenceFreq.valueAsNumber, state.tuning.referenceFreq);
+          referenceFreq.value = state.tuning.referenceFreq.toFixed(2);
+          applyGlobalFrequencyMode();
+        });
+      }
+
+      setupHelpTips();
+      wireOsc(document.querySelector("[data-osc='x']"), "x");
+      wireOsc(document.querySelector("[data-osc='y']"), "y");
+      wireTuning();
+      wirePhaseMod();
+      wirePresentationControls();
+      wireDisplay();
+      syncFreezeButtons();
+      document.getElementById("toggleFreeze").addEventListener("click", () => setFrozen(!state.frozen));
+
+      const fpsText = document.getElementById("fps");
+      const sampleText = document.getElementById("sampleStat");
+      const traceReadout = document.getElementById("traceReadout");
+      const perfReadout = document.getElementById("perfReadout");
+      const savePng = document.getElementById("savePng");
+      const exportStatus = document.getElementById("exportStatus");
+
+      function setTraceUniforms(programLoc, sampleCount, pointSize, time, intensityScale = 1) {
+        const phaseModOffset = state.phaseMod.enabled ? (time * state.phaseMod.rate * 360) % 360 : 0;
+        gl.uniform1f(programLoc.time, time);
+        gl.uniform1f(programLoc.traceWindow, state.window);
+        gl.uniform1f(programLoc.sampleCount, sampleCount);
+        gl.uniform1f(programLoc.pointSize, pointSize);
+        gl.uniform4f(programLoc.oscX, state.x.freq, state.x.amp, state.x.phase, state.x.offset);
+        gl.uniform4f(programLoc.oscY, state.y.freq, state.y.amp, state.y.phase + phaseModOffset, state.y.offset);
+        gl.uniform1i(programLoc.waveX, state.x.wave);
+        gl.uniform1i(programLoc.waveY, state.y.wave);
+        gl.uniform1f(programLoc.intensity, state.intensity * intensityScale);
+        gl.uniform1f(programLoc.antialias, state.traceAntialias);
+        gl.uniform3f(programLoc.phosphorColor, state.phosphorColor[0], state.phosphorColor[1], state.phosphorColor[2]);
+      }
+
+      function drawAccumulatedFrame(readTex, writeFb, targetWidth, targetHeight, sampleCount, pointScale, time, persistence) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, writeFb);
+        gl.viewport(0, 0, targetWidth, targetHeight);
+        gl.disable(gl.BLEND);
+        gl.useProgram(fadeProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, readTex);
+        gl.uniform1i(loc.fade.prev, 0);
+        const hold = persistence >= 1.0;
+        gl.uniform3f(
+          loc.fade.decay,
+          hold ? 1.0 : persistence * state.decay,
+          hold ? 1.0 : persistence * state.decay,
+          hold ? 1.0 : persistence * state.decay
+        );
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+        if (state.traceStyle !== "points") {
+          gl.useProgram(lineTraceProgram);
+          setTraceUniforms(loc.line, sampleCount, pointScale, time, 0.62);
+          gl.drawArrays(gl.LINE_STRIP, 0, sampleCount);
+        }
+        if (state.traceStyle !== "lines") {
+          gl.useProgram(traceProgram);
+          setTraceUniforms(loc.trace, sampleCount, pointScale, time);
+          gl.drawArrays(gl.POINTS, 0, sampleCount);
+        }
+        gl.disable(gl.BLEND);
+      }
+
+      function drawBloom(sourceTex, targets, targetWidth, targetHeight) {
+        gl.disable(gl.BLEND);
+        gl.useProgram(bloomProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.uniform1i(loc.bloom.source, 0);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, targets[0].fb);
+        gl.viewport(0, 0, targetWidth, targetHeight);
+        gl.bindTexture(gl.TEXTURE_2D, sourceTex);
+        gl.uniform2f(loc.bloom.resolution, targetWidth, targetHeight);
+        gl.uniform2f(loc.bloom.direction, 1, 0);
+        gl.uniform1i(loc.bloom.extract, 1);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, targets[1].fb);
+        gl.viewport(0, 0, targetWidth, targetHeight);
+        gl.bindTexture(gl.TEXTURE_2D, targets[0].tex);
+        gl.uniform2f(loc.bloom.direction, 0, 1);
+        gl.uniform1i(loc.bloom.extract, 0);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+
+      function presentFrame(sourceTex, bloomTex, targetFb, targetWidth, targetHeight) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, targetFb);
+        gl.viewport(0, 0, targetWidth, targetHeight);
+        gl.disable(gl.BLEND);
+        gl.useProgram(presentProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, sourceTex);
+        gl.uniform1i(loc.present.tex, 0);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, bloomTex);
+        gl.uniform1i(loc.present.bloom, 1);
+        gl.uniform2f(loc.present.resolution, targetWidth, targetHeight);
+        gl.uniform3f(loc.present.phosphorColor, state.phosphorColor[0], state.phosphorColor[1], state.phosphorColor[2]);
+        gl.uniform1f(loc.present.bloomStrength, state.bloom);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+
+      function createRenderTarget(targetWidth, targetHeight) {
+        const target = { tex: gl.createTexture(), fb: gl.createFramebuffer() };
+        configureTexture(target, targetWidth, targetHeight);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, target.fb);
+        const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if (status !== gl.FRAMEBUFFER_COMPLETE) {
+          throw new Error(`Framebuffer is not complete (${status})`);
+        }
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        return target;
+      }
+
+      function deleteRenderTarget(target) {
+        gl.deleteFramebuffer(target.fb);
+        gl.deleteTexture(target.tex);
+      }
+
+      function pixelsToPngBlob(pixels, targetWidth, targetHeight) {
+        const flipped = new Uint8ClampedArray(pixels.length);
+        const stride = targetWidth * 4;
+        for (let y = 0; y < targetHeight; y++) {
+          const sourceStart = (targetHeight - 1 - y) * stride;
+          const destStart = y * stride;
+          flipped.set(pixels.subarray(sourceStart, sourceStart + stride), destStart);
+        }
+        const image = new ImageData(flipped, targetWidth, targetHeight);
+        const outputCanvas = document.createElement("canvas");
+        outputCanvas.width = targetWidth;
+        outputCanvas.height = targetHeight;
+        const ctx = outputCanvas.getContext("2d");
+        ctx.putImageData(image, 0, 0);
+        return new Promise(resolve => outputCanvas.toBlob(resolve, "image/png"));
+      }
+
+      function triggerDownload(blob, filename) {
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+
+      async function saveExportImage() {
+        resize();
+        savePng.disabled = true;
+        exportStatus.textContent = "Rendering export...";
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const requestedWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr * state.exportScale));
+        const requestedHeight = Math.max(1, Math.floor(canvas.clientHeight * dpr * state.exportScale));
+        const capScale = Math.min(1, exportMaxDimension / Math.max(requestedWidth, requestedHeight));
+        const exportWidth = Math.max(1, Math.floor(requestedWidth * capScale));
+        const exportHeight = Math.max(1, Math.floor(requestedHeight * capScale));
+        const bloomExportWidth = Math.max(1, Math.floor(exportWidth * 0.5));
+        const bloomExportHeight = Math.max(1, Math.floor(exportHeight * 0.5));
+        const exportSamples = Math.max(state.samples, state.exportSamples) | 0;
+        const targets = [];
+        try {
+          const read = createRenderTarget(exportWidth, exportHeight);
+          const write = createRenderTarget(exportWidth, exportHeight);
+          const finalTarget = createRenderTarget(exportWidth, exportHeight);
+          const bloomA = createRenderTarget(bloomExportWidth, bloomExportHeight);
+          const bloomB = createRenderTarget(bloomExportWidth, bloomExportHeight);
+          targets.push(read, write, finalTarget, bloomA, bloomB);
+          const pointScale = state.focus * dpr * state.exportScale * capScale;
+          drawAccumulatedFrame(read.tex, write.fb, exportWidth, exportHeight, exportSamples, pointScale, simTime, 1.0);
+          drawBloom(write.tex, [bloomA, bloomB], bloomExportWidth, bloomExportHeight);
+          presentFrame(write.tex, bloomB.tex, finalTarget.fb, exportWidth, exportHeight);
+          const pixels = new Uint8Array(exportWidth * exportHeight * 4);
+          gl.readPixels(0, 0, exportWidth, exportHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+          const blob = await pixelsToPngBlob(pixels, exportWidth, exportHeight);
+          if (!blob) {
+            throw new Error("PNG encoding failed");
+          }
+          const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+          triggerDownload(blob, `waveform-visualizer-${stamp}.png`);
+          exportStatus.textContent = `Saved ${exportWidth} x ${exportHeight} / ${exportSamples} samples${capScale < 1 ? " (capped)" : ""}`;
+        } catch (error) {
+          exportStatus.textContent = error instanceof Error ? error.message : "Export failed";
+        } finally {
+          for (const target of targets) {
+            deleteRenderTarget(target);
+          }
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          savePng.disabled = false;
+        }
+      }
+
+      function render(now) {
+        resize();
+        const dt = Math.min((now - lastNow) * 0.001, 0.05);
+        lastNow = now;
+        if (!state.frozen) {
+          simTime += dt;
+        }
+
+        const read = buffers[readIndex];
+        const write = buffers[1 - readIndex];
+
+        drawAccumulatedFrame(
+          read.tex,
+          write.fb,
+          width,
+          height,
+          state.samples,
+          state.focus * renderPixelRatio(),
+          simTime,
+          state.frozen ? 1.0 : state.persistence
+        );
+
+        readIndex = 1 - readIndex;
+        drawBloom(write.tex, bloomBuffers, bloomWidth, bloomHeight);
+        presentFrame(write.tex, bloomBuffers[1].tex, null, width, height);
+
+        fpsFrames++;
+        if (now - fpsLast > 350) {
+          const fps = Math.round((fpsFrames * 1000) / (now - fpsLast));
+          fpsFrames = 0;
+          fpsLast = now;
+          fpsText.textContent = String(fps);
+          sampleText.textContent = String(state.samples);
+          traceReadout.textContent = `X ${state.x.freq.toFixed(2)} Hz  /  Y ${state.y.freq.toFixed(2)} Hz`;
+          perfReadout.textContent = `${fps} fps  /  ${state.samples} samples`;
+        }
+
+        requestAnimationFrame(render);
+      }
+
+      window.addEventListener("resize", resize, { passive: true });
+      window.visualViewport?.addEventListener("resize", resize, { passive: true });
+      savePng.addEventListener("click", saveExportImage);
+      requestAnimationFrame(render);
+    })();
+  </script>
+</body>
+</html>
