@@ -1,0 +1,63 @@
+<h2>Which expandable detail pattern fits the app?</h2>
+<p class="subtitle">Goal: keep the Skia visualizer dominant, while making cents, Hz deltas, and just-ratio meaning faster for musicians and synth users to read.</p>
+
+<div class="cards">
+  <div class="card" data-choice="bottom-sheet" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. Bottom Detail Sheet</div>
+        <div class="mockup-body">
+          <div style="height:170px;border-radius:8px;background:#0c1117;display:flex;align-items:center;justify-content:center;color:#38bdf8;font-weight:900">Visualizer</div>
+          <div style="margin-top:8px;border-radius:8px;border:1px solid #d5dde8;padding:8px;background:#fff">
+            <div style="display:flex;justify-content:space-between;font-weight:800"><span>Details</span><span>+12.4 cents</span></div>
+            <div style="height:10px"></div>
+            <div class="placeholder" style="height:38px">ratio, Hz delta, interpretation</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Bottom Sheet</h3>
+      <p>A collapsible detail section below the visualizer. Familiar mobile pattern, best for portrait, and low risk for the existing layout.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="inline-delta-strip" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. Delta Strip + Drawer</div>
+        <div class="mockup-body">
+          <div style="height:150px;border-radius:8px;background:#0c1117;display:flex;align-items:center;justify-content:center;color:#38bdf8;font-weight:900">Visualizer</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px">
+            <div class="placeholder" style="height:42px">3:2</div>
+            <div class="placeholder" style="height:42px">+1.96c</div>
+            <div class="placeholder" style="height:42px">+0.66Hz</div>
+          </div>
+          <div class="placeholder" style="height:34px;margin-top:8px">expand details</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Delta Strip</h3>
+      <p>Always show only the three most useful numbers under the visualizer, with deeper ratio notes tucked behind an expand action.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="floating-inspector" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. Floating Inspector</div>
+        <div class="mockup-body" style="position:relative">
+          <div style="height:190px;border-radius:8px;background:#0c1117;display:flex;align-items:center;justify-content:center;color:#38bdf8;font-weight:900">Visualizer</div>
+          <div style="position:absolute;right:18px;bottom:18px;width:130px;border-radius:8px;background:rgba(255,255,255,.92);border:1px solid #d5dde8;padding:8px;font-size:12px;font-weight:800">
+            3:2<br>+1.96 cents<br>tap for more
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Floating Inspector</h3>
+      <p>A compact overlay on the visualizer. Fast to read, but risks covering the trace and adding visual clutter on smaller screens.</p>
+    </div>
+  </div>
+</div>

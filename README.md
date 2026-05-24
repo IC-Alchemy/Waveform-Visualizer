@@ -52,3 +52,4 @@ PNG export is retained as a comparison image export when supported by the browse
 
 - [User Manual](USER_MANUAL.md) explains the visible controls, comparison readouts, audio behavior, export, and troubleshooting.
 - [Developer Manual](DEVELOPER_MANUAL.md) explains the single-file architecture, state flow, WebGL2 comparison renderer, optional audio path, and maintenance rules.
+- [Temperament And Tuning Reference](TEMPERAMENT_TUNING_REFERENCE.md) collects the ratios, cents, temperament tradeoffs, and Lissajous interpretation notes behind the comparison modes.

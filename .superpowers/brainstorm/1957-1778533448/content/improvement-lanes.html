@@ -1,0 +1,62 @@
+<h2>Where should the app improve first?</h2>
+<p class="subtitle">These options are based on the current Expo React Native app: Skia visualizer, note selectors, readouts, audio, preferences, PNG export, and 24 fps GIF export.</p>
+
+<div class="cards">
+  <div class="card" data-choice="live-play" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. Live Play Surface</div>
+        <div class="mockup-body">
+          <div style="height:150px;border-radius:8px;background:#101820;display:flex;align-items:center;justify-content:center;color:#60a5fa;font-weight:800">Large Skia Trace</div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <div class="placeholder" style="flex:1;height:42px">Root</div>
+            <div class="placeholder" style="flex:1;height:42px">Target</div>
+            <div class="placeholder" style="flex:1;height:42px">Audio</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Live Play</h3>
+      <p>Make the phone feel like an instrument: bigger visualizer-first layout, faster note changing, better touch ergonomics, and compact performance controls.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="export-composition" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. Composition / Export</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="placeholder" style="height:90px">Preset A</div>
+            <div class="placeholder" style="height:90px">Preset B</div>
+          </div>
+          <div class="placeholder" style="height:56px;margin-top:10px">GIF / PNG / Share Queue</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Composition</h3>
+      <p>Add saved comparison setups, named exports, repeatable GIF settings, and a clearer share workflow for making assets from the app.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="learning-comparison" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. Learning / Comparison</div>
+        <div class="mockup-body">
+          <div class="placeholder" style="height:76px">Interval Explanation</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <div class="placeholder" style="height:70px">Equal</div>
+            <div class="placeholder" style="height:70px">Just</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Learning</h3>
+      <p>Make the temperament difference easier to understand: clearer deltas, interval context, ratio explanations, and guided examples.</p>
+    </div>
+  </div>
+</div>

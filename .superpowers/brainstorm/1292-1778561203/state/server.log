@@ -1,0 +1,4 @@
+{"type":"owner-pid-invalid","pid":1,"reason":"dead at startup"}
+{"type":"server-started","port":55087,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:55087","screen_dir":"Z:\\Codezzz\\DesktopDevs\\WaveformVisualizerAndroid\\WaveformVizAndroid\\.superpowers\\brainstorm\\1292-1778561203\\content","state_dir":"Z:\\Codezzz\\DesktopDevs\\WaveformVisualizerAndroid\\WaveformVizAndroid\\.superpowers\\brainstorm\\1292-1778561203\\state"}
+{"type":"screen-added","file":"Z:\\Codezzz\\DesktopDevs\\WaveformVisualizerAndroid\\WaveformVizAndroid\\.superpowers\\brainstorm\\1292-1778561203\\content\\improvement-lanes.html"}
+{"type":"server-stopped","reason":"idle timeout"}
