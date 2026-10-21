@@ -29,7 +29,10 @@ npm run typecheck
 npm test
 ```
 
-For a standalone APK, use the short-path Windows build flow described in `# Web App to Android App Conversion Reference.md`, replacing the source path with this repo's `mobile/` folder. The Android package id is `com.waveformviz.xyoscilloscope`.
+For current local APK/AAB build instructions, use [mobile/README.md](mobile/README.md).
+The Android app is **Virtual Analog XY Oscilloscope**, package
+`com.icalchemy.xyoscilloscope`. The older conversion reference is historical,
+not the release procedure. Cloud builds and Play uploads are not authorized yet.
 
 ## What It Shows
 

@@ -3,6 +3,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 
 interface ValueSliderProps {
   label: string;
+  accessibilityLabel?: string;
   value: number;
   min: number;
   max: number;
@@ -12,7 +13,7 @@ interface ValueSliderProps {
   onCommit?: (value: number) => void;
 }
 
-export function ValueSlider({ label, value, min, max, step, format, onChange, onCommit }: ValueSliderProps) {
+export function ValueSlider({ label, accessibilityLabel = label, value, min, max, step, format, onChange, onCommit }: ValueSliderProps) {
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
@@ -22,6 +23,7 @@ export function ValueSlider({ label, value, min, max, step, format, onChange, on
       <View style={styles.controls}>
         <TextInput
           style={styles.input}
+          accessibilityLabel={`${accessibilityLabel}, numeric entry`}
           value={formatRaw(value, step)}
           keyboardType="decimal-pad"
           selectTextOnFocus
@@ -40,6 +42,8 @@ export function ValueSlider({ label, value, min, max, step, format, onChange, on
         />
         <Slider
           style={styles.slider}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityValue={{ min, max, now: value, text: format(value) }}
           minimumValue={min}
           maximumValue={max}
           step={step}
@@ -74,6 +78,7 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 10,
@@ -95,7 +100,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: 76,
-    minHeight: 40,
+    minHeight: 48,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: "#24483b",
@@ -106,6 +111,6 @@ const styles = StyleSheet.create({
   },
   slider: {
     flex: 1,
-    height: 40,
+    height: 48,
   },
 });

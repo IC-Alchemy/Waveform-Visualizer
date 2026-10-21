@@ -2,6 +2,18 @@ node_modules/
 .expo/
 android/
 ios/
-dist/*.apk
-dist/*.aab
+dist/
 *.log
+
+# Release signing material. The upload key must never enter the repository.
+# See keystore.properties.example for the expected layout.
+*.jks
+*.keystore
+keystore.properties
+
+# Local secrets and cloud config
+.env
+.env.*
+credentials.json
+google-services.json
+GoogleService-Info.plist
