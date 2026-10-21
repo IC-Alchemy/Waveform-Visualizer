@@ -1,18 +1,30 @@
 {
   "expo": {
-    "name": "Waveform Visualizer",
-    "slug": "waveform-visualizer",
+    "name": "Virtual Analog XY Oscilloscope",
+    "slug": "virtual-analog-xy-oscilloscope",
     "version": "1.0.0",
     "orientation": "default",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "plugins": [
+      "./plugins/withAndroidRelease",
+      "./plugins/withAndroidDebugNetwork"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "package": "com.waveformviz.xyoscilloscope",
+      "package": "com.icalchemy.xyoscilloscope",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.INTERNET",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.VIBRATE"
+      ]
     }
   }
 }
