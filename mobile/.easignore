@@ -1,0 +1,24 @@
+# EAS replaces .gitignore with this file; retain the existing local exclusions.
+node_modules/
+.expo/
+android/
+ios/
+dist/
+*.log
+*.jks
+*.keystore
+keystore.properties
+.env
+.env.*
+credentials.json
+google-services.json
+GoogleService-Info.plist
+
+# Never upload local signing configuration or private keys, even in subfolders.
+**/keystore.properties
+**/*.jks
+**/*.keystore
+**/*.p12
+**/*.pfx
+**/*.pem
+**/*.key

@@ -5,13 +5,13 @@ import { useRef, useState, type ReactNode } from "react";
 import {
   Alert,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { OptionModal, PickerOption } from "./src/components/OptionModal";
 import { SegmentedControl } from "./src/components/SegmentedControl";
 import { ValueSlider } from "./src/components/ValueSlider";
@@ -50,9 +50,22 @@ const TRACE_STYLE_OPTIONS: Array<PickerOption<TraceStyle>> = [
 const NOTE_PICKER_OPTIONS = NOTE_OPTIONS.map((note) => ({ value: note, label: note }));
 const INTERVAL_PICKER_OPTIONS = INTERVALS.map((interval) => ({ value: interval.value, label: interval.label }));
 const WAVEFORM_PICKER_OPTIONS = WAVEFORMS.map((wave) => ({ value: wave.value, label: wave.label }));
-const PHOSPHOR_COLORS = ["#5cff9f", "#ffbf63", "#78d8ff", "#e8fff6"];
+const PHOSPHOR_COLORS = [
+  { value: "#5cff9f", label: "Green" },
+  { value: "#ffbf63", label: "Amber" },
+  { value: "#78d8ff", label: "Blue" },
+  { value: "#e8fff6", label: "White" },
+];
 
 export default function App() {
+  return (
+    <SafeAreaProvider>
+      <ScopeScreen />
+    </SafeAreaProvider>
+  );
+}
+
+function ScopeScreen() {
   const [scope, setScope] = useState<ScopeState>(() => applyFrequencyMode(cloneDefaultState()));
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   const [exportStatus, setExportStatus] = useState("Ready.");
@@ -123,7 +136,7 @@ export default function App() {
       <StatusBar style="light" />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Waveform Visualizer</Text>
+          <Text accessibilityRole="header" style={styles.title}>Virtual Analog XY Oscilloscope</Text>
           <Text style={styles.subtitle}>{formatRatio(scope.x.freq, scope.y.freq)} / {scope.tuning.freqMode.toUpperCase()}</Text>
         </View>
 
@@ -196,15 +209,22 @@ export default function App() {
           </Field>
           <Label text="Phosphor color" />
           <View style={styles.swatches}>
-            {PHOSPHOR_COLORS.map((color) => (
-              <Pressable key={color} style={[styles.swatch, { backgroundColor: color }, scope.phosphorColor === color && styles.activeSwatch]} onPress={() => patchScope((current) => ({ ...current, phosphorColor: color }))} />
+            {PHOSPHOR_COLORS.map(({ value: color, label }) => (
+              <Pressable
+                key={color}
+                accessibilityRole="radio"
+                accessibilityLabel={`${label} phosphor`}
+                accessibilityState={{ checked: scope.phosphorColor === color }}
+                style={[styles.swatch, { backgroundColor: color }, scope.phosphorColor === color && styles.activeSwatch]}
+                onPress={() => patchScope((current) => ({ ...current, phosphorColor: color }))}
+              />
             ))}
           </View>
           <ValueSlider label="Decay" value={scope.decay} min={0.82} max={1} step={0.001} format={(v) => v.toFixed(3)} onChange={(decay) => patchScope((current) => ({ ...current, decay }))} />
           <ValueSlider label="Bloom" value={scope.bloom} min={0} max={2.2} step={0.01} format={(v) => v.toFixed(2)} onChange={(bloom) => patchScope((current) => ({ ...current, bloom }))} />
           <ValueSlider label="Trace window" value={scope.window} min={0.002} max={0.08} step={0.001} format={(v) => `${(v * 1000).toFixed(1)} ms`} onChange={(window) => patchScope((current) => ({ ...current, window }))} />
           <ValueSlider label="Samples/frame" value={scope.samples} min={512} max={16384} step={512} format={(v) => String(Math.round(v))} onChange={(samples) => patchScope((current) => ({ ...current, samples: Math.round(samples) }))} />
-          <Pressable style={styles.primaryButton} onPress={() => patchScope((current) => ({ ...current, frozen: !current.frozen }))}>
+          <Pressable accessibilityRole="button" style={styles.primaryButton} onPress={() => patchScope((current) => ({ ...current, frozen: !current.frozen }))}>
             <Text style={styles.primaryButtonText}>{scope.frozen ? "Resume" : "Freeze"}</Text>
           </Pressable>
         </Section>
@@ -213,7 +233,7 @@ export default function App() {
           <Text style={styles.stat}>Live samples: {Math.round(scope.samples)}</Text>
           <ValueSlider label="Export scale" value={scope.exportScale} min={1} max={3} step={0.5} format={(v) => `${v.toFixed(1)}x`} onChange={(exportScale) => patchScope((current) => ({ ...current, exportScale }))} />
           <ValueSlider label="Export samples" value={scope.exportSamples} min={16384} max={65536} step={4096} format={(v) => String(Math.round(v))} onChange={(exportSamples) => patchScope((current) => ({ ...current, exportSamples: Math.round(exportSamples) }))} />
-          <Pressable style={styles.primaryButton} onPress={sharePng}>
+          <Pressable accessibilityRole="button" style={styles.primaryButton} onPress={sharePng}>
             <Text style={styles.primaryButtonText}>Share PNG</Text>
           </Pressable>
           <Text style={styles.status}>{exportStatus}</Text>
@@ -248,13 +268,13 @@ function OscillatorSection({
       <Field label="Waveform">
         <OptionModal title={`${title} waveform`} options={WAVEFORM_PICKER_OPTIONS} value={osc.wave} open={openPicker === `${axis}-wave`} onOpenChange={(open) => setOpenPicker(open ? `${axis}-wave` : null)} onChange={(wave) => onOscValue(axis, { wave: wave as Waveform })} />
       </Field>
-      <ValueSlider label="Frequency" value={osc.freq} min={MIN_FREQUENCY} max={MAX_FREQUENCY} step={0.01} format={formatFrequency} onChange={(value) => onFrequency(axis, value)} />
+      <ValueSlider label="Frequency" accessibilityLabel={`${title} frequency`} value={osc.freq} min={MIN_FREQUENCY} max={MAX_FREQUENCY} step={0.01} format={formatFrequency} onChange={(value) => onFrequency(axis, value)} />
       <Field label="Note">
         <OptionModal title={`${title} note`} options={NOTE_PICKER_OPTIONS} value={osc.note} disabled={scope.tuning.freqMode === "hz"} open={openPicker === `${axis}-note`} onOpenChange={(open) => setOpenPicker(open ? `${axis}-note` : null)} onChange={(note) => onNote(axis, note)} />
       </Field>
-      <ValueSlider label="Amplitude" value={osc.amp} min={0} max={1} step={0.001} format={(v) => v.toFixed(3)} onChange={(amp) => onOscValue(axis, { amp })} />
-      <ValueSlider label="Phase" value={osc.phase} min={-180} max={180} step={0.1} format={(v) => `${v.toFixed(1)} deg`} onChange={(phase) => onOscValue(axis, { phase })} />
-      <ValueSlider label="Offset" value={osc.offset} min={-0.9} max={0.9} step={0.001} format={(v) => v.toFixed(3)} onChange={(offset) => onOscValue(axis, { offset })} />
+      <ValueSlider label="Amplitude" accessibilityLabel={`${title} amplitude`} value={osc.amp} min={0} max={1} step={0.001} format={(v) => v.toFixed(3)} onChange={(amp) => onOscValue(axis, { amp })} />
+      <ValueSlider label="Phase" accessibilityLabel={`${title} phase`} value={osc.phase} min={-180} max={180} step={0.1} format={(v) => `${v.toFixed(1)} deg`} onChange={(phase) => onOscValue(axis, { phase })} />
+      <ValueSlider label="Offset" accessibilityLabel={`${title} offset`} value={osc.offset} min={-0.9} max={0.9} step={0.001} format={(v) => v.toFixed(3)} onChange={(offset) => onOscValue(axis, { offset })} />
     </Section>
   );
 }
@@ -262,7 +282,7 @@ function OscillatorSection({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>
       <View style={styles.sectionBody}>{children}</View>
     </View>
   );
@@ -300,6 +320,7 @@ const styles = StyleSheet.create({
   title: {
     color: "#eafff3",
     fontSize: 26,
+    lineHeight: 30,
     fontWeight: "900",
   },
   subtitle: {
@@ -333,11 +354,12 @@ const styles = StyleSheet.create({
   },
   swatches: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   swatch: {
-    width: 42,
-    height: 42,
+    width: 48,
+    height: 48,
     borderRadius: 6,
     borderWidth: 2,
     borderColor: "#10251f",
@@ -346,7 +368,7 @@ const styles = StyleSheet.create({
     borderColor: "#ffffff",
   },
   primaryButton: {
-    minHeight: 44,
+    minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 7,

@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   button: {
-    minHeight: 38,
+    minHeight: 48,
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
     borderColor: "#24483b",
     backgroundColor: "#0b1b17",
     paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   selected: {
     borderColor: "#5cff9f",
